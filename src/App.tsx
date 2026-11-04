@@ -45,7 +45,7 @@ interface Passenger {
 
 // Accurate real-world coordinates and highway distances for STJ Viola Ekonomi
 const DEFAULT_CHECKPOINTS_SBY_MG: Checkpoint[] = [
-  { id: 'exit-dumpil', name: 'Exit Toll Dumpil', lat: -7.5752, lng: 111.5794, distanceKm: 150, estTime: '15:30 WIB', status: 'checkpoint', description: 'Pemberhentian pertama keluar tol Dumpil Madiun.' },
+  { id: 'exit-dumpil', name: 'Exit Toll Dumpil (Gerbang Tol Madiun)', lat: -7.5571, lng: 111.5512, distanceKm: 150, estTime: '15:30 WIB', status: 'checkpoint', description: 'Titik lokasi Gerbang Tol Madiun / Exit Dumpil.' },
   { id: 'term-madiun', name: 'Terminal Madiun', lat: -7.6046, lng: 111.5235, distanceKm: 156, estTime: '15:45 WIB', status: 'checkpoint', description: 'Pemberhentian di Terminal Purboyo Madiun.' },
   { id: 'pertigaan-totok', name: 'Pertigaan Totok', lat: -7.5954, lng: 111.4880, distanceKm: 161, estTime: '16:00 WIB', status: 'checkpoint', description: 'Penurunan penumpang area Pertigaan Totok.' },
   { id: 'garasi-stj', name: 'Garasi STJ', lat: -7.5785, lng: 111.4550, distanceKm: 166, estTime: '16:15 WIB', status: 'checkpoint', description: 'Transit / Garasi pusat Sudiro Tungga Jaya.' },
