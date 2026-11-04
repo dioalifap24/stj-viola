@@ -8,8 +8,19 @@ import {
   Bus, Volume2, Mic, MapPin, Users, Clock, Navigation, Play, 
   Sparkles, ArrowRightLeft, Radio, Ticket, VolumeX, ShieldCheck, Download, Zap, Compass, Satellite, Map as MapIcon, LineChart, RotateCcw,
   Bell, BellRing, Vibrate, AlertTriangle, Locate, LocateFixed, Crosshair, Navigation2,
-  Loader2, Headphones, CheckCircle2, Volume1
+  Loader2, Headphones, CheckCircle2, Volume1, Settings, Key, HelpCircle, Check, X, Sliders, ExternalLink
 } from 'lucide-react';
+import { 
+  formatIndonesianTextForSpeech, 
+  getBestIndonesianVoice, 
+  synthesizeWithGeminiClientDirect, 
+  getStoredGeminiApiKey, 
+  saveStoredGeminiApiKey, 
+  getStoredVoiceUri, 
+  saveStoredVoiceUri,
+  GEMINI_VOICES, 
+  VOICE_STYLES 
+} from './utils/speechEngine';
 
 interface Checkpoint {
   id: string;
@@ -103,6 +114,12 @@ export default function App() {
   const [isAudioLoading, setIsAudioLoading] = useState<boolean>(false);
   const [activeAudioCategory, setActiveAudioCategory] = useState<string | null>(null);
   const [voiceEngineStatus, setVoiceEngineStatus] = useState<string>('Studio AI Human Voice');
+  const [clientApiKey, setClientApiKey] = useState<string>(() => getStoredGeminiApiKey());
+  const [apiKeyInput, setApiKeyInput] = useState<string>(() => getStoredGeminiApiKey());
+  const [showVoiceSettingsModal, setShowVoiceSettingsModal] = useState<boolean>(false);
+  const [browserVoices, setBrowserVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [selectedBrowserVoiceUri, setSelectedBrowserVoiceUri] = useState<string>(() => getStoredVoiceUri());
+  const [apiKeySaveMsg, setApiKeySaveMsg] = useState<string | null>(null);
 
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
   const audioCacheRef = useRef<Map<string, string>>(new Map());
@@ -120,6 +137,37 @@ export default function App() {
   const [newPassengerName, setNewPassengerName] = useState('');
   const [newPassengerSeat, setNewPassengerSeat] = useState('2B');
   const [newPassengerDest, setNewPassengerDest] = useState('Terminal Magetan');
+
+  // Asynchronously load and cache device voices for natural human Indonesian speech
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+
+    const updateVoices = () => {
+      try {
+        const voices = window.speechSynthesis.getVoices();
+        if (voices && voices.length > 0) {
+          setBrowserVoices(voices);
+          if (!selectedBrowserVoiceUri) {
+            const best = getBestIndonesianVoice(voices);
+            if (best) {
+              setSelectedBrowserVoiceUri(best.voiceURI);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Error reading voices:', err);
+      }
+    };
+
+    updateVoices();
+    window.speechSynthesis.onvoiceschanged = updateVoices;
+
+    return () => {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.onvoiceschanged = null;
+      }
+    };
+  }, [selectedBrowserVoiceUri]);
 
   // Real-time Geolocation tracking wherever the app is opened
   useEffect(() => {
@@ -361,7 +409,7 @@ export default function App() {
     setActiveAudioCategory(null);
   };
 
-  // Studio-Quality Natural Human Voice Synthesis (Gemini 3.8 Flash Lite TTS)
+  // Multi-tier Natural Human Voice Engine (GitHub Pages Static + Server + Client Gemini + Calibrated Neural Voice)
   const speakAnnouncement = async (text: string, category?: string) => {
     if (!text) return;
 
@@ -376,9 +424,65 @@ export default function App() {
       await playPreAnnouncementChime();
     }
 
+    // Tier 1: Check for pre-bundled Studio WAV human audio (Works 100% on GitHub Pages without server/API key)
+    const basePath = (import.meta.env.BASE_URL || './').replace(/\/$/, '');
+    let staticAudioPath: string | null = null;
+    if (category === 'welcome') {
+      staticAudioPath = `${basePath}/audio/welcome.wav`;
+    } else if (category === 'test') {
+      staticAudioPath = `${basePath}/audio/test_sample.wav`;
+    }
+
+    if (staticAudioPath) {
+      try {
+        const audio = new Audio(staticAudioPath);
+        audio.volume = voiceVolume;
+        currentAudioRef.current = audio;
+
+        audio.onplay = () => {
+          setIsAudioLoading(false);
+          setIsPlaying(true);
+          setVoiceEngineStatus('Audio Studio Human (Static Bundled / Siap GitHub)');
+        };
+
+        audio.onended = () => {
+          setIsPlaying(false);
+          setIsAudioLoading(false);
+          setActiveAudioCategory(null);
+          currentAudioRef.current = null;
+        };
+
+        audio.onerror = () => {
+          console.warn('Bundled audio file load failed, continuing to dynamic speech...');
+          executeDynamicSpeech(text, category);
+        };
+
+        await audio.play();
+        return;
+      } catch (e) {
+        console.warn('Bundled audio playback error, falling back to dynamic synthesis:', e);
+      }
+    }
+
+    await executeDynamicSpeech(text, category);
+  };
+
+  const executeDynamicSpeech = async (text: string, category?: string) => {
     const cacheKey = `${selectedVoice}:${text}`;
     let audioBase64 = audioCacheRef.current.get(cacheKey);
 
+    // Check localStorage cache
+    if (!audioBase64) {
+      try {
+        const stored = localStorage.getItem(`audio_${cacheKey.slice(0, 40)}`);
+        if (stored) {
+          audioBase64 = stored;
+          setVoiceEngineStatus('Studio AI Human Voice (Tersimpan di Cache)');
+        }
+      } catch {}
+    }
+
+    // Tier 2: Try Backend Express Server API (if server.ts is running)
     if (!audioBase64) {
       try {
         const response = await fetch('/api/synthesize-speech', {
@@ -396,13 +500,35 @@ export default function App() {
             audioBase64 = data.audioBase64;
             audioCacheRef.current.set(cacheKey, data.audioBase64);
             setVoiceEngineStatus('Studio AI Human Voice (Gemini TTS 24kHz)');
+            try {
+              localStorage.setItem(`audio_${cacheKey.slice(0, 40)}`, data.audioBase64);
+            } catch {}
           }
         }
-      } catch (err) {
-        console.warn('TTS server call failed, falling back to browser speech:', err);
+      } catch {
+        // Backend not available (typical when deployed statically to GitHub Pages)
       }
     }
 
+    // Tier 3: Client-Side Direct Gemini API (Runs directly in browser for GitHub Pages static deployments)
+    if (!audioBase64 && clientApiKey) {
+      try {
+        setVoiceEngineStatus('Memproses Suara Manusia via Gemini Client...');
+        const base64 = await synthesizeWithGeminiClientDirect(text, selectedVoice, clientApiKey);
+        if (base64) {
+          audioBase64 = base64;
+          audioCacheRef.current.set(cacheKey, base64);
+          setVoiceEngineStatus('Studio AI Human Voice (Direct Gemini Client / GitHub)');
+          try {
+            localStorage.setItem(`audio_${cacheKey.slice(0, 40)}`, base64);
+          } catch {}
+        }
+      } catch (clientErr: any) {
+        console.warn('Direct client-side Gemini TTS failed:', clientErr);
+      }
+    }
+
+    // Play synthesized Gemini audio if available
     if (audioBase64) {
       try {
         const audio = new Audio(`data:audio/wav;base64,${audioBase64}`);
@@ -422,7 +548,6 @@ export default function App() {
         };
 
         audio.onerror = () => {
-          console.error('Audio element playback error');
           setIsAudioLoading(false);
           setIsPlaying(false);
           setActiveAudioCategory(null);
@@ -432,26 +557,26 @@ export default function App() {
         await audio.play();
         return;
       } catch (playbackError) {
-        console.warn('Playback error with Audio element, fallback to Web Speech:', playbackError);
+        console.warn('Playback error with Audio element, fallback to calibrated voice:', playbackError);
       }
     }
 
-    // Graceful browser speech synthesis fallback
+    // Tier 4: Calibrated Indonesian Human Web Speech Engine (Zero Robot!)
     setIsAudioLoading(false);
-    setVoiceEngineStatus('Browser Audio Fallback');
-    if ('speechSynthesis' in window) {
+    setVoiceEngineStatus('Suara Alami Indonesia (Terkalibrasi Bebas Robot)');
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
+
+      // Transform abbreviations into articulate Indonesian speech
+      const formattedText = formatIndonesianTextForSpeech(text);
+      const utterance = new SpeechSynthesisUtterance(formattedText);
       utterance.lang = 'id-ID';
       utterance.volume = voiceVolume;
-      utterance.rate = 0.95; 
-      utterance.pitch = 0.85; 
+      utterance.rate = 0.90; // Natural Indonesian announcement pace, not rushed or robotic
+      utterance.pitch = 1.0; // Natural human tone
 
-      const voices = window.speechSynthesis.getVoices();
-      const naturalVoice = voices.find(v => 
-        (v.lang.toLowerCase().includes('id') || v.lang.toLowerCase().includes('indonesia')) && 
-        (v.name.toLowerCase().includes('google') || v.name.toLowerCase().includes('natural') || v.name.toLowerCase().includes('male'))
-      ) || voices.find(v => v.lang.toLowerCase().includes('id')) || voices[0];
+      const voices = browserVoices.length > 0 ? browserVoices : window.speechSynthesis.getVoices();
+      const naturalVoice = getBestIndonesianVoice(voices, selectedBrowserVoiceUri);
 
       if (naturalVoice) {
         utterance.voice = naturalVoice;
@@ -475,6 +600,26 @@ export default function App() {
   const handleTestSampleVoice = () => {
     const sampleText = `Perhatian kepada seluruh penumpang, ini adalah uji coba suara asli manusia untuk armada Sudiro Tungga Jaya Viola. Suara jernih, berwibawa, dan nyaman didengarkan di sepanjang rute Magetan Surabaya.`;
     speakAnnouncement(sampleText, 'test');
+  };
+
+  const handleSaveApiKey = () => {
+    saveStoredGeminiApiKey(apiKeyInput);
+    setClientApiKey(apiKeyInput.trim());
+    setApiKeySaveMsg('Kunci API Gemini tersimpan! Suara manusia 24kHz aktif di GitHub.');
+    setTimeout(() => setApiKeySaveMsg(null), 4000);
+  };
+
+  const handleClearApiKey = () => {
+    saveStoredGeminiApiKey('');
+    setClientApiKey('');
+    setApiKeyInput('');
+    setApiKeySaveMsg('Kunci API telah dihapus dari browser.');
+    setTimeout(() => setApiKeySaveMsg(null), 4000);
+  };
+
+  const handleSelectBrowserVoice = (uri: string) => {
+    setSelectedBrowserVoiceUri(uri);
+    saveStoredVoiceUri(uri);
   };
 
   // Play STJ Bus Horn Sound Effect
@@ -1040,12 +1185,36 @@ export default function App() {
                     Suara penyiar dan kondektur manusia asli berkualitas studio (Gemini 3.8 Flash Lite TTS) — bebas suara robot!
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <span className="px-3 py-1.5 rounded-xl bg-emerald-950/80 border border-emerald-500/40 text-emerald-400 text-xs font-mono font-bold flex items-center gap-1.5 shadow-sm">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                    Audio Manusia (WAV 24kHz)
+                    {voiceEngineStatus}
+                  </span>
+                  <button
+                    onClick={() => setShowVoiceSettingsModal(true)}
+                    className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 hover:text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all"
+                    title="Pengaturan Deploy GitHub & Suara Bebas Robot"
+                  >
+                    <Settings className="w-3.5 h-3.5 text-red-400" />
+                    <span>Mode GitHub & Kunci API</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* GitHub Pages Audio Status Banner */}
+              <div className="mt-4 p-3 rounded-xl bg-slate-950/80 border border-slate-800/90 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-2.5 text-slate-300">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
+                  <span>
+                    <strong className="text-white">Status Audio GitHub:</strong> {clientApiKey ? '🟢 Kunci API Gemini Aktif (Suara Manusia Studio 24kHz Penuh)' : '✅ Audio Studio Bawaan Aktif (Sambutan & Tes Suara 100% Manusia)'}
                   </span>
                 </div>
+                <button
+                  onClick={() => setShowVoiceSettingsModal(true)}
+                  className="text-red-400 hover:text-red-300 font-semibold underline underline-offset-2 flex items-center gap-1 text-[11px]"
+                >
+                  <Sliders className="w-3.5 h-3.5" /> Buka Pengaturan Suara GitHub →
+                </button>
               </div>
             </div>
 
@@ -1852,6 +2021,173 @@ export default function App() {
       <footer className="py-6 text-center text-xs text-slate-500 border-t border-slate-800/80 bg-slate-900/50 mt-auto">
         <p>© 2026 Kondektur Digital STJ Viola Ekonomi · Rute Surabaya ⇄ Magetan.</p>
       </footer>
+
+      {/* Modal: Pengaturan Suara & Deploy GitHub Pages */}
+      {showVoiceSettingsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl p-6 space-y-6 text-slate-200">
+            
+            {/* Modal Header */}
+            <div className="flex items-start justify-between pb-4 border-b border-slate-800">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-red-600/20 text-red-400 border border-red-500/30 flex items-center justify-center shrink-0">
+                  <Headphones className="w-5 h-5 text-red-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                    Pengaturan Suara Manusia & GitHub Pages
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Solusi anti-suara robot untuk aplikasi STJ Viola saat di-hosting statis
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowVoiceSettingsModal(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Status Aktif Saat Ini */}
+            <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-mono text-slate-400 uppercase tracking-wider">
+                  ENGINE AUDIO AKTIF SAAT INI:
+                </span>
+                <span className="px-2.5 py-1 rounded-full bg-emerald-950 border border-emerald-500/40 text-emerald-400 text-xs font-mono font-bold flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                  {voiceEngineStatus}
+                </span>
+              </div>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Suara yang Anda dengarkan menggunakan format audio berkualitas tinggi. Ketika di-deploy ke GitHub Pages, sistem memprioritaskan audio studio rekaman manusia dan direct call AI sehingga suara tidak terdengar seperti robot.
+              </p>
+            </div>
+
+            {/* Bagian 1: Kunci API Gemini untuk GitHub Pages */}
+            <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-3">
+              <div className="flex items-center gap-2 text-white font-bold text-sm">
+                <Key className="w-4 h-4 text-amber-400" />
+                <span>Kunci API Google Gemini (Opsional untuk GitHub Pages)</span>
+              </div>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Jika di-deploy ke GitHub Pages (tanpa server backend), masukkan kunci API Gemini gratis Anda di sini. Seluruh pengumuman titik pemberhentian point dan naskah kondektur akan disuarakan dengan suara manusia Gemini 3.8 Flash Lite TTS (24kHz WAV) langsung dari browser HP Anda!
+              </p>
+              
+              <div className="space-y-2 pt-1">
+                <div className="flex gap-2">
+                  <input
+                    type="password"
+                    placeholder="Masukkan Gemini API Key (AIzaSy...)"
+                    value={apiKeyInput}
+                    onChange={(e) => setApiKeyInput(e.target.value)}
+                    className="flex-1 px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-red-500 font-mono"
+                  />
+                  <button
+                    onClick={handleSaveApiKey}
+                    className="px-4 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-xl transition-all shadow-md shrink-0 flex items-center gap-1.5"
+                  >
+                    <Check className="w-4 h-4" /> Simpan
+                  </button>
+                  {clientApiKey && (
+                    <button
+                      onClick={handleClearApiKey}
+                      className="px-3 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-xl transition-all"
+                      title="Hapus Kunci API dari perangkat"
+                    >
+                      Hapus
+                    </button>
+                  )}
+                </div>
+
+                {apiKeySaveMsg && (
+                  <p className="text-xs text-emerald-400 font-medium flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> {apiKeySaveMsg}
+                  </p>
+                )}
+
+                <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
+                  <span>Tersimpan aman di localStorage browser perangkat Anda.</span>
+                  <a
+                    href="https://aistudio.google.com/apikey"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-red-400 hover:underline flex items-center gap-1"
+                  >
+                    Dapatkan Kunci Gratis <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            {/* Bagian 2: Suara Alami Perangkat (Cadangan Offline Bebas Robot) */}
+            <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-3">
+              <div className="flex items-center gap-2 text-white font-bold text-sm">
+                <Volume2 className="w-4 h-4 text-blue-400" />
+                <span>Pilihan Suara Alami Perangkat (Cadangan Mode Offline)</span>
+              </div>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Jika tanpa kunci API atau saat sinyal offline di rute perjalanan, sistem menggunakan pelafalan fonetik bahasa Indonesia yang telah dioptimalkan (menyebutkan "S T J", "kilometer", dll.) sehingga tidak kaku.
+              </p>
+
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-mono text-slate-400">
+                  SUARA BAHASA INDONESIA DI PERANGKAT:
+                </label>
+                <select
+                  value={selectedBrowserVoiceUri}
+                  onChange={(e) => handleSelectBrowserVoice(e.target.value)}
+                  className="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-red-500"
+                >
+                  {browserVoices
+                    .filter(v => v.lang.toLowerCase().includes('id') || v.lang.toLowerCase().includes('in'))
+                    .map((v) => (
+                      <option key={v.voiceURI} value={v.voiceURI}>
+                        {v.name} ({v.lang}) {v.name.toLowerCase().includes('google') ? '⭐ (Alami Google)' : ''}
+                      </option>
+                    ))}
+                  {browserVoices.filter(v => v.lang.toLowerCase().includes('id') || v.lang.toLowerCase().includes('in')).length === 0 && (
+                    <option value="">Deteksi otomatis suara bahasa Indonesia perangkat</option>
+                  )}
+                </select>
+              </div>
+            </div>
+
+            {/* Bagian 3: Tips Deploy GitHub Pages */}
+            <div className="p-4 rounded-xl bg-slate-950/40 border border-slate-800/80 text-xs text-slate-400 space-y-1.5">
+              <p className="font-semibold text-slate-300 flex items-center gap-1.5">
+                <HelpCircle className="w-4 h-4 text-red-400" /> Catatan Penting Saat Deploy ke GitHub Pages:
+              </p>
+              <ul className="list-disc list-inside space-y-1 text-slate-400 pl-1">
+                <li>Konfigurasi path relatif (<code className="text-red-300 bg-slate-900 px-1 py-0.5 rounded">base: './'</code>) sudah terpasang di <code className="text-slate-300">vite.config.ts</code> sehingga aset audio selalu dapat diakses.</li>
+                <li>Tombol <strong>1. Sambutan Penumpang</strong> dan <strong>Tes Suara</strong> di halaman depan langsung memutar rekaman studio asli Gemini WAV 24kHz tanpa perlu server sama sekali.</li>
+              </ul>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+              <button
+                onClick={handleTestSampleVoice}
+                disabled={isAudioLoading || isPlaying}
+                className="w-full sm:w-auto px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 flex items-center justify-center gap-2 transition-all"
+              >
+                <Volume2 className="w-4 h-4 text-red-400" />
+                <span>Uji Contoh Suara Sekarang</span>
+              </button>
+
+              <button
+                onClick={() => setShowVoiceSettingsModal(false)}
+                className="w-full sm:w-auto px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-xl transition-all shadow-md"
+              >
+                Tutup & Simpan
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
 
     </div>
   );
