@@ -1,6 +1,7 @@
 import express from 'express';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
+import * as googleTTS from 'google-tts-api';
 import dotenv from 'dotenv';
 import path from 'path';
 
@@ -21,15 +22,15 @@ const ai = new GoogleGenAI({
 
 // Accurate route distances and real GPS coordinates for STJ Viola Ekonomi
 const CHECKPOINTS_SURABAYA_TO_MAGETAN = [
-  { id: 'exit-dumpil', name: 'Exit Toll Dumpil', lat: -7.5752, lng: 111.5794, distanceKm: 145, estTime: '15:30 WIB', status: 'checkpoint', description: 'Pemberhentian pertama keluar tol Dumpil Madiun.' },
-  { id: 'term-madiun', name: 'Terminal Madiun', lat: -7.6046, lng: 111.5235, distanceKm: 153, estTime: '15:45 WIB', status: 'checkpoint', description: 'Pemberhentian di Terminal Purboyo Madiun.' },
-  { id: 'pertigaan-totok', name: 'Pertigaan Totok', lat: -7.5954, lng: 111.4880, distanceKm: 158, estTime: '16:00 WIB', status: 'checkpoint', description: 'Penurunan penumpang area Pertigaan Totok.' },
-  { id: 'garasi-stj', name: 'Garasi STJ', lat: -7.5785, lng: 111.4550, distanceKm: 164, estTime: '16:15 WIB', status: 'checkpoint', description: 'Transit / Garasi pusat Sudiro Tungga Jaya.' },
-  { id: 'jalan-mbarat', name: 'Jalan Mbarat', lat: -7.5615, lng: 111.4390, distanceKm: 167, estTime: '16:22 WIB', status: 'checkpoint', description: 'Pemberhentian area Jalan Mbarat / Stasiun Barat.' },
-  { id: 'term-maospati', name: 'Terminal Maospati', lat: -7.5458, lng: 111.4344, distanceKm: 171, estTime: '16:30 WIB', status: 'checkpoint', description: 'Pemberhentian Terminal Maospati.' },
-  { id: 'sukomoro', name: 'Sukomoro', lat: -7.6180, lng: 111.3850, distanceKm: 178, estTime: '16:42 WIB', status: 'checkpoint', description: 'Pemberhentian area Sukomoro Magetan.' },
-  { id: 'pasar-jengglong', name: 'Pasar Jengglong', lat: -7.6410, lng: 111.3480, distanceKm: 184, estTime: '16:55 WIB', status: 'checkpoint', description: 'Pemberhentian Pasar Jengglong Magetan.' },
-  { id: 'term-magetan', name: 'Terminal Magetan (Tujuan Akhir)', lat: -7.6534, lng: 111.3325, distanceKm: 188, estTime: '17:10 WIB', status: 'arrival', description: 'Terminal akhir kedatangan Magetan.' }
+  { id: 'exit-dumpil', name: 'Exit Toll Dumpil', lat: -7.5752, lng: 111.5794, distanceKm: 150, estTime: '15:30 WIB', status: 'checkpoint', description: 'Pemberhentian pertama keluar tol Dumpil Madiun.' },
+  { id: 'term-madiun', name: 'Terminal Madiun', lat: -7.6046, lng: 111.5235, distanceKm: 156, estTime: '15:45 WIB', status: 'checkpoint', description: 'Pemberhentian di Terminal Purboyo Madiun.' },
+  { id: 'pertigaan-totok', name: 'Pertigaan Totok', lat: -7.5954, lng: 111.4880, distanceKm: 161, estTime: '16:00 WIB', status: 'checkpoint', description: 'Penurunan penumpang area Pertigaan Totok.' },
+  { id: 'garasi-stj', name: 'Garasi STJ', lat: -7.5785, lng: 111.4550, distanceKm: 166, estTime: '16:15 WIB', status: 'checkpoint', description: 'Transit / Garasi pusat Sudiro Tungga Jaya.' },
+  { id: 'jalan-mbarat', name: 'Jalan Mbarat', lat: -7.5615, lng: 111.4390, distanceKm: 169, estTime: '16:22 WIB', status: 'checkpoint', description: 'Pemberhentian area Jalan Mbarat / Stasiun Barat.' },
+  { id: 'term-maospati', name: 'Terminal Maospati', lat: -7.5458, lng: 111.4344, distanceKm: 173, estTime: '16:30 WIB', status: 'checkpoint', description: 'Pemberhentian Terminal Maospati.' },
+  { id: 'sukomoro', name: 'Sukomoro', lat: -7.6180, lng: 111.3850, distanceKm: 180, estTime: '16:42 WIB', status: 'checkpoint', description: 'Pemberhentian area Sukomoro Magetan.' },
+  { id: 'pasar-jengglong', name: 'Pasar Jengglong', lat: -7.6410, lng: 111.3480, distanceKm: 185, estTime: '16:55 WIB', status: 'checkpoint', description: 'Pemberhentian Pasar Jengglong Magetan.' },
+  { id: 'term-magetan', name: 'Terminal Magetan (Tujuan Akhir)', lat: -7.6534, lng: 111.3325, distanceKm: 190, estTime: '17:10 WIB', status: 'arrival', description: 'Terminal akhir kedatangan Magetan.' }
 ];
 
 const CHECKPOINTS_MAGETAN_TO_SURABAYA = [
@@ -59,20 +60,20 @@ app.post('/api/generate-announcement', async (req, res) => {
     const dirText = routeDirection === 'magetan-surabaya' ? 'Magetan menuju Surabaya' : 'Surabaya menuju Magetan';
 
     if (type === 'welcome') {
-      promptText = `Buatlah naskah pengumuman stasiun / terminal resmi penyiaran suara pengeras suara untuk bus PO. Sudiro Tungga Jaya (STJ) armada "Viola" Kelas Ekonomi rute ${dirText}. Awali dengan "Perhatian... Perhatian kepada seluruh penumpang...". Gunakan gaya bahasa penyiar stasiun bus profesional, berwibawa, jelas, dan tegas (maksimal 3-4 kalimat).`;
+      promptText = `Buatlah naskah pengumuman resmi kondektur / penyiar bus PO. Sudiro Tungga Jaya (STJ) armada "Viola" Kelas Ekonomi rute ${dirText}. Awali dengan "Perhatian... Perhatian kepada seluruh penumpang...". Sambut penumpang dan ingatkan menjaga barang bawaan. JANGAN pernah menyebutkan angka jarak tempuh, kilometer, ataupun angka kecepatan.`;
     } else if (type === 'ticket-payment') {
-      promptText = `Buatlah pengumuman pengeras suara stasiun bus STJ Viola Ekonomi untuk persiapan pemeriksaan tiket dan pembayaran ongkos bus. Awali dengan "Perhatian kepada seluruh penumpang...". Nada suara penyiar stasiun yang jelas dan tegas.`;
+      promptText = `Buatlah pengumuman kondektur bus STJ Viola Ekonomi untuk persiapan pemeriksaan tiket dan pembayaran ongkos bus. Awali dengan "Perhatian kepada seluruh penumpang...". JANGAN menyebutkan angka jarak tempuh kilometer ataupun kecepatan.`;
     } else if (type === 'checkpoint') {
-      promptText = `Buatlah naskah pengumuman pengeras suara stasiun untuk pemberhentian bus STJ Viola di "${locationName}" (rute ${dirText}). Awali dengan "Perhatian kepada seluruh penumpang... Bus STJ Viola sebentar lagi akan tiba di...".`;
+      promptText = `Buatlah naskah pengumuman kondektur bus STJ Viola yang akan tiba di titik pemberhentian "${locationName}" (rute ${dirText}). Awali dengan "Perhatian seluruh penumpang... Bus STJ Viola sebentar lagi akan tiba di ${locationName}...". Ingatkan penumpang yang turun untuk bersiap dan memeriksa barang. JANGAN menyebutkan angka jarak tempuh kilometer ataupun kecepatan.`;
     } else {
-      promptText = `Buatlah pengumuman stasiun bus STJ Viola dengan topik: "${customPrompt}". Gaya bahasa penyiar terminal profesional dan berwibawa.`;
+      promptText = `Buatlah pengumuman bus STJ Viola dengan topik: "${customPrompt}". Gaya bahasa kondektur bus ramah, profesional, dan berwibawa. Jangan menyebutkan angka jarak tempuh atau angka kecepatan.`;
     }
 
     const response = await ai.models.generateContent({
       model: 'gemini-3.8-flash',
       contents: promptText,
       config: {
-        systemInstruction: 'Anda adalah sistem pengumuman audio stasiun terminal bus profesional untuk Sudiro Tungga Jaya (STJ) "Viola". Awali setiap pengumuman dengan frasa khas pengumuman stasiun seperti "Perhatian... Perhatian...".',
+        systemInstruction: 'Anda adalah kondektur dan penyiar audio profesional untuk bus Sudiro Tungga Jaya (STJ) "Viola" rute Surabaya - Magetan. Awali pengumuman dengan ramah dan sopan seperti "Perhatian...". DILARANG menyebutkan angka sisa jarak tempuh ataupun angka kecepatan bus dalam pengumuman suara.',
       }
     });
 
@@ -85,12 +86,13 @@ app.post('/api/generate-announcement', async (req, res) => {
 
 // API: Synthesize Studio-Quality Natural Human Voice (Gemini 3.8 Flash Lite TTS)
 app.post('/api/synthesize-speech', async (req, res) => {
+  const { text, voiceName = 'Fenrir', voiceStyle } = req.body;
+  
+  if (!text || typeof text !== 'string') {
+    return res.status(400).json({ error: 'Text pengumuman wajib diisi.' });
+  }
+
   try {
-    const { text, voiceName = 'Fenrir', voiceStyle } = req.body;
-    
-    if (!text || typeof text !== 'string') {
-      return res.status(400).json({ error: 'Text pengumuman wajib diisi.' });
-    }
 
     const defaultStyles: Record<string, string> = {
       Fenrir: 'Natural, warm, charming, authoritative Indonesian male bus conductor and terminal announcer with clear diction',
@@ -136,8 +138,27 @@ app.post('/api/synthesize-speech', async (req, res) => {
       mimeType: 'audio/wav',
     });
   } catch (error: any) {
-    console.error('Gemini TTS Error:', error);
-    res.status(500).json({ error: error.message || 'Gagal memproses suara manusia.' });
+    console.warn('Gemini TTS Error, falling back to Google TTS API:', error?.message || error);
+    try {
+      const getAudioFn = (googleTTS as any).getAllAudioBase64 || (googleTTS as any).default?.getAllAudioBase64;
+      if (!getAudioFn) {
+        throw new Error('getAllAudioBase64 is not a function');
+      }
+      const chunks = await getAudioFn(text, {
+        lang: 'id',
+        slow: false,
+        timeout: 10000,
+      });
+      const buffers = chunks.map((c: any) => Buffer.from(c.base64, 'base64'));
+      const combined = Buffer.concat(buffers);
+      return res.json({
+        audioBase64: combined.toString('base64'),
+        mimeType: 'audio/mp3',
+      });
+    } catch (fallbackErr: any) {
+      console.error('Google TTS fallback also failed:', fallbackErr?.message || fallbackErr);
+      res.status(500).json({ error: 'Gagal memproses suara: ' + (fallbackErr?.message || error?.message) });
+    }
   }
 });
 
