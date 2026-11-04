@@ -1,0 +1,6 @@
+{
+  "name": "Kondektur Digital STJ Viola",
+  "description": "Aplikasi Kondektur Bus Sudiro Tungga Jaya Armada Viola rute Magetan - Surabaya dengan sound perjalanan, notifikasi titik pemberhentian, dan pengumuman otomatis AI.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
