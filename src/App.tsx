@@ -89,10 +89,10 @@ export default function App() {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number; accuracy?: number; heading?: number | null } | null>(null);
   const [isGpsLive, setIsGpsLive] = useState<boolean>(true);
   const [gpsErrorMsg, setGpsErrorMsg] = useState<string | null>(null);
-  const [gpsSpeedKmh, setGpsSpeedKmh] = useState<number>(55); 
-  const [gpsSourceStatus, setGpsSourceStatus] = useState<string>('Menggunakan Jalur Otomatis Satelit STJ Viola (Real-time)');
-  const [locationMode, setLocationMode] = useState<'satelit_auto' | 'device'>('satelit_auto');
-  const [isAutoMoving, setIsAutoMoving] = useState<boolean>(true);
+  const [gpsSpeedKmh, setGpsSpeedKmh] = useState<number>(0); 
+  const [gpsSourceStatus, setGpsSourceStatus] = useState<string>('Mendeteksi GPS Perangkat (Diam / 0 KM/Jam)...');
+  const [locationMode, setLocationMode] = useState<'satelit_auto' | 'device'>('device');
+  const [isAutoMoving, setIsAutoMoving] = useState<boolean>(false);
   const [autoAdvancePoint, setAutoAdvancePoint] = useState<boolean>(true);
 
   // Live Distance Traveled (Jarak Tempuh / Odometer)
