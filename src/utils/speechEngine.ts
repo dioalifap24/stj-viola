@@ -107,7 +107,8 @@ export function formatIndonesianTextForSpeech(rawText: string): string {
  */
 export function getBestIndonesianVoice(
   voices: SpeechSynthesisVoice[],
-  preferredUri?: string
+  preferredUri?: string,
+  preferMale: boolean = true
 ): SpeechSynthesisVoice | null {
   if (!voices || voices.length === 0) return null;
 
@@ -116,28 +117,38 @@ export function getBestIndonesianVoice(
     if (selected) return selected;
   }
 
-  // 1. Indonesian voices containing "google" (standard high quality neural on Android/Chrome)
-  const googleId = voices.find(v => 
-    (v.lang.toLowerCase().startsWith('id') || v.lang.toLowerCase().startsWith('in')) &&
-    v.name.toLowerCase().includes('google')
-  );
-  if (googleId) return googleId;
-
-  // 2. Indonesian voices marked as "natural" or "online" (e.g. Edge Gadis/Ardi Natural)
-  const naturalId = voices.find(v => 
-    (v.lang.toLowerCase().startsWith('id') || v.lang.toLowerCase().startsWith('in')) &&
-    (v.name.toLowerCase().includes('natural') || v.name.toLowerCase().includes('online'))
-  );
-  if (naturalId) return naturalId;
-
-  // 3. Any Indonesian voice (id-ID or in-ID)
-  const anyId = voices.find(v => 
+  const indonesianVoices = voices.filter(v => 
     v.lang.toLowerCase().startsWith('id') || v.lang.toLowerCase().startsWith('in')
   );
-  if (anyId) return anyId;
 
-  // 4. Fallback to default
-  return voices.find(v => v.default) || voices[0] || null;
+  if (indonesianVoices.length === 0) {
+    return voices.find(v => v.default) || voices[0] || null;
+  }
+
+  if (preferMale) {
+    // Prefer male Indonesian voices (Ardi, Darma, Indra, Budi, or names containing 'male'/'pria'/'laki')
+    const maleVoice = indonesianVoices.find(v => {
+      const name = v.name.toLowerCase();
+      return name.includes('male') || name.includes('pria') || name.includes('ardi') || name.includes('darma') || name.includes('indra') || name.includes('budi');
+    });
+    if (maleVoice) return maleVoice;
+
+    // Google Indonesian neural voice or default
+    const googleId = indonesianVoices.find(v => v.name.toLowerCase().includes('google'));
+    if (googleId) return googleId;
+  } else {
+    // Prefer female Indonesian voices (Gadis, Putri, Siti, or names containing 'female'/'wanita')
+    const femaleVoice = indonesianVoices.find(v => {
+      const name = v.name.toLowerCase();
+      return name.includes('female') || name.includes('wanita') || name.includes('gadis') || name.includes('putri') || name.includes('siti');
+    });
+    if (femaleVoice) return femaleVoice;
+
+    const googleId = indonesianVoices.find(v => v.name.toLowerCase().includes('google'));
+    if (googleId) return googleId;
+  }
+
+  return indonesianVoices[0] || voices[0] || null;
 }
 
 /**

@@ -149,6 +149,20 @@ export default function App() {
   const [newPassengerSeat, setNewPassengerSeat] = useState('2B');
   const [newPassengerDest, setNewPassengerDest] = useState('Terminal Magetan');
 
+  // Clean legacy colliding audio cache keys that may contain stale female recordings
+  useEffect(() => {
+    try {
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && (k.startsWith('audio_') || k.startsWith('stj_voice_audio_'))) {
+          keysToRemove.push(k);
+        }
+      }
+      keysToRemove.forEach(k => localStorage.removeItem(k));
+    } catch {}
+  }, []);
+
   // Asynchronously load and cache device voices for natural human Indonesian speech fallback
   useEffect(() => {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
@@ -517,7 +531,7 @@ export default function App() {
       await playPreAnnouncementChime();
     }
 
-    // Tier 1: Check pre-bundled Studio WAV/MP3 human audio files
+    // Resolve static audio files
     const resolveAudioUrl = (filename: string): string => {
       try {
         const base = import.meta.env.BASE_URL || '/';
@@ -528,33 +542,39 @@ export default function App() {
       }
     };
 
-    const staticMap: Record<string, string> = {
-      welcome: resolveAudioUrl('welcome.mp3'),
-      ticket: resolveAudioUrl('ticket.mp3'),
-      checkpoint: resolveAudioUrl('checkpoint_generic.mp3'),
-      test: resolveAudioUrl('test_sample.mp3'),
-      berangkat: resolveAudioUrl('berangkat.mp3'),
-      restarea: resolveAudioUrl('restarea.mp3'),
-      tol: resolveAudioUrl('tol.mp3'),
-      proximity: resolveAudioUrl('proximity_alert.mp3'),
-      // Individual Checkpoint recordings
-      'point-exit-dumpil': resolveAudioUrl('point_exit_dumpil.mp3'),
-      'point-term-madiun': resolveAudioUrl('point_term_madiun.mp3'),
-      'point-pertigaan-totok': resolveAudioUrl('point_pertigaan_totok.mp3'),
-      'point-garasi-stj': resolveAudioUrl('point_garasi_stj.mp3'),
-      'point-jalan-mbarat': resolveAudioUrl('point_jalan_mbarat.mp3'),
-      'point-term-maospati': resolveAudioUrl('point_term_maospati.mp3'),
-      'point-sukomoro': resolveAudioUrl('point_sukomoro.mp3'),
-      'point-pasar-jengglong': resolveAudioUrl('point_pasar_jengglong.mp3'),
-      'point-term-magetan': resolveAudioUrl('point_term_magetan.mp3'),
-      'point-menanggal': resolveAudioUrl('point_menanggal.mp3'),
-      'point-medaeng': resolveAudioUrl('point_medaeng.mp3'),
-      'point-grab-long': resolveAudioUrl('point_grab_long.mp3'),
-      'point-ramayana': resolveAudioUrl('point_ramayana.mp3'),
-      'point-term-bungurasih': resolveAudioUrl('point_term_bungurasih.mp3'),
-    };
+    let staticAudioPath: string | null = null;
+    const voiceKey = selectedVoice.toLowerCase(); // 'fenrir' | 'puck' | 'charon' | 'kore'
 
-    const staticAudioPath = category ? staticMap[category] : null;
+    if (category) {
+      if (category.startsWith('point-')) {
+        // Individual Checkpoint: point-exit-dumpil, point-term-madiun, etc.
+        const cleanCpId = category.replace('point-', '').replace(/-/g, '_');
+        // Check for persona-specific recording (e.g. point_exit_dumpil_puck.mp3)
+        // or default (point_exit_dumpil.mp3 which is Fenrir male voice)
+        if (selectedVoice === 'Fenrir') {
+          staticAudioPath = resolveAudioUrl(`point_${cleanCpId}.mp3`);
+        } else {
+          staticAudioPath = resolveAudioUrl(`point_${cleanCpId}_${voiceKey}.mp3`);
+        }
+      } else {
+        // General announcement buttons: welcome, ticket, checkpoint, test, berangkat, restarea, tol, proximity
+        if (category === 'welcome') {
+          // Welcome audio is pre-rendered for all 4 personas with Mas Rifai & Mas Jully
+          staticAudioPath = resolveAudioUrl(`welcome_${voiceKey}.mp3`);
+        } else if (selectedVoice === 'Fenrir') {
+          const generalMap: Record<string, string> = {
+            ticket: resolveAudioUrl('ticket.mp3'),
+            checkpoint: resolveAudioUrl('checkpoint_generic.mp3'),
+            test: resolveAudioUrl('test_sample.mp3'),
+            berangkat: resolveAudioUrl('berangkat.mp3'),
+            restarea: resolveAudioUrl('restarea.mp3'),
+            tol: resolveAudioUrl('tol.mp3'),
+            proximity: resolveAudioUrl('proximity_alert.mp3'),
+          };
+          staticAudioPath = generalMap[category] || null;
+        }
+      }
+    }
 
     if (staticAudioPath) {
       try {
@@ -565,7 +585,8 @@ export default function App() {
         audio.onplay = () => {
           setIsAudioLoading(false);
           setIsPlaying(true);
-          setVoiceEngineStatus('Audio Studio Human Asli (Bundled / Siap Offline)');
+          const personaLabel = selectedVoice === 'Kore' ? 'Mbak Kore (Wanita)' : `Mas ${selectedVoice} (Pria)`;
+          setVoiceEngineStatus(`Audio Studio Asli (${personaLabel} - 24kHz)`);
         };
 
         audio.onended = () => {
@@ -576,7 +597,7 @@ export default function App() {
         };
 
         audio.onerror = () => {
-          console.warn('Bundled audio file load failed, executing dynamic speech...');
+          console.warn('Bundled audio file load failed, executing dynamic speech...', staticAudioPath);
           executeDynamicSpeech(text, category);
         };
 
@@ -591,16 +612,29 @@ export default function App() {
   };
 
   const executeDynamicSpeech = async (text: string, category?: string) => {
-    const cacheKey = `${selectedVoice}:${text}`;
-    let audioBase64 = audioCacheRef.current.get(cacheKey);
+    // Generate unique, non-colliding hash for cache
+    const simpleHash = (str: string) => {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = (hash << 5) - hash + str.charCodeAt(i);
+        hash |= 0;
+      }
+      return Math.abs(hash).toString(36);
+    };
 
-    // Check localStorage cache
+    const cacheKey = `${selectedVoice}_${simpleHash(text)}`;
+    let audioBase64: string | null = audioCacheRef.current.get(cacheKey) || null;
+    let audioMimeType = 'audio/wav';
+
+    // Check localStorage cache (clean non-colliding key)
     if (!audioBase64) {
       try {
-        const stored = localStorage.getItem(`audio_${cacheKey.slice(0, 40)}`);
+        const stored = localStorage.getItem(`stj_v2_${cacheKey}`);
         if (stored) {
-          audioBase64 = stored;
-          setVoiceEngineStatus('Studio AI Human Voice (Tersimpan di Cache)');
+          const parsed = JSON.parse(stored);
+          audioBase64 = parsed.audioBase64 || stored;
+          audioMimeType = parsed.mimeType || (audioBase64?.startsWith('UklGR') ? 'audio/wav' : 'audio/mp3');
+          setVoiceEngineStatus(`Studio AI Voice (${selectedVoice} - Tersimpan di Cache)`);
         }
       } catch {}
     }
@@ -621,10 +655,14 @@ export default function App() {
           const data = await response.json();
           if (data?.audioBase64 && typeof data.audioBase64 === 'string') {
             audioBase64 = data.audioBase64;
+            audioMimeType = data.mimeType || (data.audioBase64.startsWith('UklGR') ? 'audio/wav' : 'audio/mp3');
             audioCacheRef.current.set(cacheKey, data.audioBase64);
-            setVoiceEngineStatus('Studio AI Human Voice (Gemini TTS 24kHz)');
+            setVoiceEngineStatus(`Studio AI Voice (${selectedVoice} - Gemini TTS 24kHz)`);
             try {
-              localStorage.setItem(`audio_${cacheKey.slice(0, 40)}`, data.audioBase64);
+              localStorage.setItem(`stj_v2_${cacheKey}`, JSON.stringify({
+                audioBase64: data.audioBase64,
+                mimeType: audioMimeType
+              }));
             } catch {}
           }
         }
@@ -636,14 +674,18 @@ export default function App() {
     // Tier 3: Client-Side Direct Gemini API (Runs directly in browser for GitHub Pages static deployments)
     if (!audioBase64 && clientApiKey) {
       try {
-        setVoiceEngineStatus('Memproses Suara Manusia via Gemini Client...');
+        setVoiceEngineStatus(`Memproses Suara ${selectedVoice} via Gemini Client...`);
         const base64 = await synthesizeWithGeminiClientDirect(text, selectedVoice, clientApiKey);
         if (base64) {
           audioBase64 = base64;
+          audioMimeType = base64.startsWith('UklGR') ? 'audio/wav' : 'audio/mp3';
           audioCacheRef.current.set(cacheKey, base64);
-          setVoiceEngineStatus('Studio AI Human Voice (Direct Gemini Client / GitHub)');
+          setVoiceEngineStatus(`Studio AI Voice (${selectedVoice} - Direct Gemini Client)`);
           try {
-            localStorage.setItem(`audio_${cacheKey.slice(0, 40)}`, base64);
+            localStorage.setItem(`stj_v2_${cacheKey}`, JSON.stringify({
+              audioBase64: base64,
+              mimeType: audioMimeType
+            }));
           } catch {}
         }
       } catch (clientErr: any) {
@@ -654,7 +696,8 @@ export default function App() {
     // Play synthesized audio if available
     if (audioBase64) {
       try {
-        const audio = new Audio(`data:audio/mp3;base64,${audioBase64}`);
+        const finalMime = audioMimeType || (audioBase64.startsWith('UklGR') ? 'audio/wav' : 'audio/mp3');
+        const audio = new Audio(`data:${finalMime};base64,${audioBase64}`);
         audio.volume = voiceVolume;
         currentAudioRef.current = audio;
 
@@ -671,24 +714,37 @@ export default function App() {
         };
 
         audio.onerror = () => {
-          playGoogleTtsAudioStream(text);
+          fallbackVoicePlayback(text, selectedVoice);
         };
 
         await audio.play();
         return;
       } catch (playbackError) {
-        console.warn('Playback error with Audio element, fallback to Google TTS stream:', playbackError);
+        console.warn('Playback error with Audio element, fallback:', playbackError);
+        fallbackVoicePlayback(text, selectedVoice);
+        return;
       }
     }
 
-    // Tier 4: Direct Google Neural Audio Stream (100% Human Voice, ZERO ROBOT!)
-    playGoogleTtsAudioStream(text);
+    // Tier 4: Persona-accurate fallback
+    fallbackVoicePlayback(text, selectedVoice);
+  };
+
+  const fallbackVoicePlayback = (text: string, voiceName: 'Fenrir' | 'Puck' | 'Charon' | 'Kore') => {
+    setIsAudioLoading(false);
+    if (voiceName === 'Kore') {
+      // Female voice: Google TTS neural stream
+      playGoogleTtsAudioStream(text);
+    } else {
+      // Male voice (Fenrir, Puck, Charon): NEVER play female Google TTS! Use calibrated browser male voice
+      speakCalibratedBrowserVoice(text, voiceName);
+    }
   };
 
   const playGoogleTtsAudioStream = (text: string) => {
     try {
       setIsAudioLoading(false);
-      setVoiceEngineStatus('Suara Alami Indonesia (Neural Audio Stream)');
+      setVoiceEngineStatus('Suara Alami Indonesia (Mbak Kore - Neural Audio Stream)');
       const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=id&total=1&idx=0&client=tw-ob`;
       const audio = new Audio(ttsUrl);
       audio.volume = voiceVolume;
@@ -705,18 +761,18 @@ export default function App() {
       };
 
       audio.onerror = () => {
-        speakCalibratedBrowserVoice(text);
+        speakCalibratedBrowserVoice(text, 'Kore');
       };
 
       audio.play().catch(() => {
-        speakCalibratedBrowserVoice(text);
+        speakCalibratedBrowserVoice(text, 'Kore');
       });
     } catch {
-      speakCalibratedBrowserVoice(text);
+      speakCalibratedBrowserVoice(text, 'Kore');
     }
   };
 
-  const speakCalibratedBrowserVoice = (text: string) => {
+  const speakCalibratedBrowserVoice = (text: string, voiceName?: 'Fenrir' | 'Puck' | 'Charon' | 'Kore') => {
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       const formattedText = formatIndonesianTextForSpeech(text);
@@ -724,10 +780,24 @@ export default function App() {
       utterance.lang = 'id-ID';
       utterance.volume = voiceVolume;
       utterance.rate = 0.90;
-      utterance.pitch = 1.0;
+
+      const activeVoice = voiceName || selectedVoice;
+      const isMale = activeVoice !== 'Kore';
+
+      if (activeVoice === 'Charon') {
+        utterance.pitch = 0.76; // Deep bass mature male
+      } else if (activeVoice === 'Fenrir') {
+        utterance.pitch = 0.86; // Authoritative male
+      } else if (activeVoice === 'Puck') {
+        utterance.pitch = 0.94; // Friendly male
+      } else {
+        utterance.pitch = 1.05; // Kore female
+      }
+
+      setVoiceEngineStatus(`Suara Browser Terkalibrasi (${activeVoice} - ${isMale ? 'Pria' : 'Wanita'})`);
 
       const voices = browserVoices.length > 0 ? browserVoices : window.speechSynthesis.getVoices();
-      const naturalVoice = getBestIndonesianVoice(voices, selectedBrowserVoiceUri);
+      const naturalVoice = getBestIndonesianVoice(voices, selectedBrowserVoiceUri, isMale);
       if (naturalVoice) {
         utterance.voice = naturalVoice;
       }
@@ -772,27 +842,49 @@ export default function App() {
     saveStoredVoiceUri(uri);
   };
 
-  // Play STJ Bus Horn Sound Effect
+  // Play STJ Bus Air Horn Sound Effect (Iconic Twin-Tone "Ton-Ton" Bus Horn)
   const playBusHorn = () => {
     try {
       const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
+      
+      const playTone = (freq1: number, freq2: number, startTime: number, duration: number) => {
+        // Oscillator 1 (Square wave for rich bus horn punch)
+        const osc1 = audioCtx.createOscillator();
+        const gain1 = audioCtx.createGain();
+        osc1.type = 'square';
+        osc1.frequency.setValueAtTime(freq1, audioCtx.currentTime + startTime);
+        
+        gain1.gain.setValueAtTime(0.2, audioCtx.currentTime + startTime);
+        gain1.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + startTime + duration);
+        
+        osc1.connect(gain1);
+        gain1.connect(audioCtx.destination);
+        osc1.start(audioCtx.currentTime + startTime);
+        osc1.stop(audioCtx.currentTime + startTime + duration);
 
-      osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(180, audioCtx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + 0.4);
+        // Oscillator 2 (Sawtooth for harmonic depth)
+        const osc2 = audioCtx.createOscillator();
+        const gain2 = audioCtx.createGain();
+        osc2.type = 'sawtooth';
+        osc2.frequency.setValueAtTime(freq2, audioCtx.currentTime + startTime);
+        
+        gain2.gain.setValueAtTime(0.18, audioCtx.currentTime + startTime);
+        gain2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + startTime + duration);
+        
+        osc2.connect(gain2);
+        gain2.connect(audioCtx.destination);
+        osc2.start(audioCtx.currentTime + startTime);
+        osc2.stop(audioCtx.currentTime + startTime + duration);
+      };
 
-      gain.gain.setValueAtTime(0.35, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+      // Ton 1 ("TON...")
+      playTone(150, 225, 0.0, 0.35);
 
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
+      // Ton 2 ("...TON!")
+      playTone(140, 210, 0.42, 0.45);
 
-      osc.start();
-      osc.stop(audioCtx.currentTime + 0.5);
     } catch (e) {
-      console.error(e);
+      console.error('Bus horn audio error:', e);
     }
   };
 
@@ -870,7 +962,7 @@ export default function App() {
   // Soundboard scripts - 100% Suara Manusia (Bebas Robot & Tanpa Sebutan Angka Jarak Tempuh/Kecepatan)
   const handlePlayWelcome = () => {
     const routeName = routeDirection === 'surabaya-magetan' ? 'Surabaya menuju Magetan' : 'Magetan menuju Surabaya';
-    const script = `Perhatian... Selamat datang Bapak, Ibu, dan seluruh penumpang setia Sudiro Tungga Jaya armada Viola kelas Ekonomi rute ${routeName}. Selamat menikmati perjalanan bersama STJ Viola. Silakan duduk dengan nyaman dan tetap menjaga barang bawaan Anda.`;
+    const script = `Perhatian... Selamat datang Bapak, Ibu, dan seluruh penumpang setia Sudiro Tungga Jaya armada Viola kelas Ekonomi rute ${routeName}. Perjalanan kita kali ini dipandu oleh pengemudi kita Mas Rifai, dan didampingi oleh saya sendiri kondektur Mas Jully. Selamat menikmati perjalanan bersama STJ Viola. Silakan duduk dengan nyaman dan tetap menjaga barang bawaan Anda. Terima kasih dan selamat menikmati perjalanan.`;
     speakAnnouncement(script, 'welcome');
   };
 
@@ -910,7 +1002,7 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           type: 'custom',
-          customPrompt: `${customPrompt}. (Gaya pengumuman kondektur bus profesional dan ramah. Jangan menyebutkan angka jarak tempuh kilometer ataupun kecepatan bus)`,
+          customPrompt: `${customPrompt}. (Gaya pengumuman kondektur bus profesional dan ramah. Jangan menyebutkan nama sopir atau kondektur karena perkenalan kru hanya di awal sambutan saja. Jangan menyebutkan angka jarak tempuh kilometer ataupun kecepatan bus)`,
           routeDirection
         })
       });
@@ -971,9 +1063,18 @@ export default function App() {
     document.body.removeChild(link);
   };
 
-  const googleMapsEmbedUrl = routeDirection === 'surabaya-magetan'
-    ? "https://www.google.com/maps/embed?pb=!1m28!1m12!1m3!1d253212.456!2d111.9!3d-7.4!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!4m13!3e0!4m5!1s0x2dd7fbf8381ac3f3%3A0x8085380d648074cb!2sTerminal%20Purabaya!3m2!1d-7.3698!2d112.7188!4m5!1s0x2e79bc513c3b0369%3A0x4027a76e3532720!2sMagetan!3m2!1d-7.6534!2d111.3325!5e0!3m2!1sid!2sid!4v1700000000000!5m2!1sid!2sid"
-    : "https://www.google.com/maps/embed?pb=!1m28!1m12!1m3!1d253212.456!2d111.9!3d-7.4!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!4m13!3e0!4m5!1s0x2e79bc513c3b0369%3A0x4027a76e3532720!2sMagetan!3m2!1d-7.6534!2d111.3325!4m5!1s0x2dd7fbf8381ac3f3%3A0x8085380d648074cb!2sTerminal%20Purabaya!3m2!1d-7.3698!2d112.7188!5e0!3m2!1sid!2sid!4v1700000000000!5m2!1sid!2sid";
+  // Google Maps Directions (Purabaya Bungurasih Waru <-> Terminal Magetan)
+  const isSbyToMg = routeDirection === 'surabaya-magetan';
+  const originName = isSbyToMg ? 'Terminal Purabaya Bungurasih (Waru, Sidoarjo)' : 'Terminal Magetan (Magetan)';
+  const destinationName = isSbyToMg ? 'Terminal Magetan (Magetan)' : 'Terminal Purabaya Bungurasih (Waru, Sidoarjo)';
+
+  const googleMapsEmbedUrl = isSbyToMg
+    ? "https://maps.google.com/maps?saddr=Terminal+Purabaya+Bungurasih+Waru+Sidoarjo&daddr=Terminal+Magetan+Jawa+Timur&output=embed"
+    : "https://maps.google.com/maps?saddr=Terminal+Magetan+Jawa+Timur&daddr=Terminal+Purabaya+Bungurasih+Waru+Sidoarjo&output=embed";
+
+  const googleMapsExternalUrl = isSbyToMg
+    ? "https://www.google.com/maps/dir/?api=1&origin=Terminal+Purabaya+Bungurasih+Waru+Sidoarjo&destination=Terminal+Magetan+Jawa+Timur&travelmode=driving"
+    : "https://www.google.com/maps/dir/?api=1&origin=Terminal+Magetan+Jawa+Timur&destination=Terminal+Purabaya+Bungurasih+Waru+Sidoarjo&travelmode=driving";
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-red-600 selection:text-white">
@@ -1152,7 +1253,7 @@ export default function App() {
                   Mendekati Point: <span className="text-amber-400 underline decoration-amber-400">{proximityAlertActive.name}</span>
                 </h3>
                 <p className="text-xs text-amber-200/90">
-                  Sisa jarak ke checkpoint tinggal <strong className="text-white font-mono">{proximityAlertActive.meters} meter</strong>! Kondektur harap bersiap memberi aba-aba.
+                  Bus STJ Viola sebentar lagi akan tiba di point <strong className="text-white font-mono">{proximityAlertActive.name}</strong>. Kondektur harap bersiap memberi aba-aba.
                 </p>
               </div>
             </div>
@@ -1195,40 +1296,41 @@ export default function App() {
                 <span>{gpsSourceStatus}</span>
               </div>
 
-              {/* Point Name and Distance Remaining */}
+              {/* Point Name */}
               <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight flex items-baseline gap-2 flex-wrap">
                 <span>Point: {activeCheckpoint.name}</span>
-                <span className="text-red-400 font-mono font-bold text-lg sm:text-xl">
-                  ({distanceRemainingDisplay})
-                </span>
               </h2>
 
               {/* Live Bus Speed */}
               <p className="text-xs sm:text-sm text-slate-300 mt-1.5">
                 Kecepatan Bus Real-time (Satelit/GPS):{' '}
-                <span className="font-mono font-bold text-white text-sm sm:text-base">
+                <span className="font-mono font-bold text-emerald-400 text-sm sm:text-base">
                   {gpsSpeedKmh} KM/Jam
                 </span>
               </p>
 
-              {/* Centered JARAK TEMPUH Display Badge */}
-              <div className="mt-5 flex items-center justify-center gap-3">
-                <div className="bg-slate-950/90 border border-slate-800/90 rounded-2xl px-10 py-3 text-center shadow-inner min-w-[200px]">
-                  <p className="text-[11px] font-mono text-slate-400 uppercase tracking-widest font-semibold">
-                    JARAK TEMPUH
-                  </p>
-                  <p className="text-2xl sm:text-3xl font-mono font-bold text-teal-400 mt-0.5 tracking-tight">
-                    {distanceTraveledKm.toFixed(1)} KM
-                  </p>
+              {/* Real-time Speed and Point Schedule Badges */}
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                <div className="bg-slate-950/90 border border-slate-800/90 rounded-2xl px-6 py-2.5 flex items-center gap-3 shadow-inner">
+                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></div>
+                  <div>
+                    <p className="text-[10px] font-mono text-slate-400 uppercase tracking-widest font-semibold">
+                      KECEPATAN REAL-TIME
+                    </p>
+                    <p className="text-xl sm:text-2xl font-mono font-bold text-emerald-400">
+                      {gpsSpeedKmh} <span className="text-xs text-slate-400 font-sans">KM/Jam</span>
+                    </p>
+                  </div>
                 </div>
 
-                <button
-                  onClick={resetDistanceTraveled}
-                  className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700 transition-all"
-                  title="Reset Jarak Tempuh (Odometer) ke 0.0 KM"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                </button>
+                <div className="bg-slate-950/90 border border-slate-800/90 rounded-2xl px-6 py-2.5 shadow-inner">
+                  <p className="text-[10px] font-mono text-slate-400 uppercase tracking-widest font-semibold">
+                    JADWAL TIBA POINT
+                  </p>
+                  <p className="text-xl sm:text-2xl font-mono font-bold text-white">
+                    {activeCheckpoint.estTime}
+                  </p>
+                </div>
               </div>
 
             </div>
@@ -1276,9 +1378,9 @@ export default function App() {
             </div>
 
             <div className="flex justify-between items-center py-1.5">
-              <span className="text-slate-400 font-medium">Jarak Tempuh:</span>
-              <span className="text-teal-400 font-mono font-bold text-base">
-                {distanceTraveledKm.toFixed(1)} KM
+              <span className="text-slate-400 font-medium">Jadwal Tiba Point:</span>
+              <span className="text-white font-mono font-bold text-base">
+                {activeCheckpoint.estTime}
               </span>
             </div>
           </div>
@@ -1539,9 +1641,9 @@ export default function App() {
                   <div className="w-11 h-11 rounded-xl bg-red-600/10 text-red-500 flex items-center justify-center mb-3">
                     <Bus className="w-6 h-6" />
                   </div>
-                  <h3 className="text-base font-bold text-white mb-1.5">1. Sambutan Penumpang</h3>
+                  <h3 className="text-base font-bold text-white mb-1.5">1. Sambutan & Perkenalan Kru</h3>
                   <p className="text-xs text-slate-400 leading-relaxed mb-4">
-                    Menyambut penumpang, mengumumkan rute resmi STJ Viola, mengingatkan keselamatan dan barang bawaan secara ramah dan berwibawa.
+                    Menyambut penumpang, perkenalan sopir Mas Rifai dan kondektur Mas Jully, mengingatkan kenyamanan dan keamanan barang bawaan.
                   </p>
                 </div>
                 <button 
@@ -1700,9 +1802,18 @@ export default function App() {
                     Klik nama point untuk langsung memutar suara manusia asli tujuan tersebut
                   </p>
                 </div>
-                <span className="text-xs font-mono text-emerald-400 bg-emerald-950/60 px-2.5 py-1 rounded-lg border border-emerald-500/30">
-                  {checkpoints.length} Point Siap Diputar
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs font-semibold px-2.5 py-1 rounded-lg border ${
+                    selectedVoice === 'Kore'
+                      ? 'text-pink-400 bg-pink-950/60 border-pink-500/30'
+                      : 'text-amber-400 bg-amber-950/60 border-amber-500/30'
+                  }`}>
+                    🎙️ Suara: {selectedVoice === 'Kore' ? 'Mbak Kore (Wanita)' : `Mas ${selectedVoice} (Pria)`}
+                  </span>
+                  <span className="text-xs font-mono text-emerald-400 bg-emerald-950/60 px-2.5 py-1 rounded-lg border border-emerald-500/30 hidden sm:inline-block">
+                    {checkpoints.length} Point Siap
+                  </span>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
@@ -1715,7 +1826,9 @@ export default function App() {
                       key={cp.id}
                       onClick={() => {
                         setCurrentCheckpointIndex(idx);
-                        const script = `Perhatian seluruh penumpang. Berdasarkan koordinat satelit GPS real-time, bus STJ Viola sebentar lagi akan tiba di titik point ${cp.name}. Bagi penumpang yang turun di ${cp.name}, dipersilakan mempersiapkan barang bawaan.`;
+                        const script = cp.id.includes('term-') || cp.id.includes('term_')
+                          ? `Perhatian seluruh penumpang. Bus STJ Viola telah tiba di ${cp.name}. Terima kasih telah bepergian bersama Sudiro Tungga Jaya Viola. Sampai jumpa di perjalanan berikutnya.`
+                          : `Perhatian seluruh penumpang. Bus STJ Viola sebentar lagi akan tiba di ${cp.name}. Bagi penumpang yang akan turun di ${cp.name}, dipersilakan mempersiapkan barang bawaan Anda. Terima kasih.`;
                         speakAnnouncement(script, categoryKey);
                       }}
                       className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between gap-1.5 ${
@@ -1856,21 +1969,23 @@ export default function App() {
                 </div>
               </div>
 
-              {/* ETA Summary Card */}
+              {/* ETA & Status Summary Card */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-slate-950 border border-slate-800 rounded-xl p-5 space-y-2">
-                  <p className="text-xs font-mono text-slate-400">TOTAL JARAK RUTE</p>
-                  <p className="text-xl font-bold text-white font-mono">{totalRouteKm} KM</p>
+                  <p className="text-xs font-mono text-slate-400 uppercase">STATUS RUTE & POINT SASARAN</p>
+                  <p className="text-xl font-bold text-white font-mono">
+                    {routeDirection === 'surabaya-magetan' ? 'Surabaya → Magetan' : 'Magetan → Surabaya'}
+                  </p>
                   <p className="text-xs text-slate-400">
-                    Sudah ditempuh: <strong className="text-teal-400">{distanceTraveledKm.toFixed(1)} KM</strong> ({percentCovered}%) · Sisa: {finalRemainingKm} KM
+                    Point Sasaran: <strong className="text-amber-400">{activeCheckpoint.name}</strong> ({currentCheckpointIndex + 1} dari {checkpoints.length} point)
                   </p>
                 </div>
 
                 <div className="bg-slate-950 border border-slate-800 rounded-xl p-5 space-y-2">
-                  <p className="text-xs font-mono text-slate-400">ESTIMASI TIBA (ETA) DI TUJUAN AKHIR</p>
-                  <p className="text-xl font-bold text-emerald-400 font-mono">{etaFinalTimeStr}</p>
+                  <p className="text-xs font-mono text-slate-400 uppercase">KECEPATAN & ESTIMASI TIBA (ETA)</p>
+                  <p className="text-xl font-bold text-emerald-400 font-mono">{gpsSpeedKmh} KM/Jam · {etaFinalTimeStr}</p>
                   <p className="text-xs text-slate-400">
-                    Estimasi sisa perjalanan: ~{etaMinutesTotal} menit ({gpsSpeedKmh} KM/Jam)
+                    Estimasi tiba di tujuan akhir: ~{etaMinutesTotal} menit ({gpsSpeedKmh} KM/Jam)
                   </p>
                 </div>
               </div>
@@ -1913,7 +2028,6 @@ export default function App() {
                 {checkpoints.map((cp, idx) => {
                   const isCurrent = currentCheckpointIndex === idx;
                   const isPassed = idx < currentCheckpointIndex;
-                  const distDisplay = isCurrent ? distanceRemainingDisplay : `${Math.abs(cp.distanceKm - 145).toFixed(1)} KM`;
 
                   return (
                     <div 
@@ -1921,7 +2035,9 @@ export default function App() {
                       onClick={() => {
                         setAutoAdvancePoint(false);
                         setCurrentCheckpointIndex(idx);
-                        const script = `Perhatian seluruh penumpang. Bus STJ Viola sebentar lagi akan tiba di titik pemberhentian point ${cp.name}. Bagi penumpang yang akan turun, dipersilakan mempersiapkan barang bawaan.`;
+                        const script = cp.id.includes('term-') || cp.id.includes('term_')
+                          ? `Perhatian seluruh penumpang. Bus STJ Viola telah tiba di ${cp.name}. Terima kasih telah bepergian bersama Sudiro Tungga Jaya Viola. Sampai jumpa di perjalanan berikutnya.`
+                          : `Perhatian seluruh penumpang. Bus STJ Viola sebentar lagi akan tiba di titik point ${cp.name}. Bagi penumpang yang akan turun, dipersilakan mempersiapkan barang bawaan Anda. Terima kasih.`;
                         speakAnnouncement(script, `point-${cp.id}`);
                       }}
                       className={`p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-4 ${isCurrent ? 'bg-red-950/40 border-red-500/60 shadow-lg' : isPassed ? 'bg-slate-900/40 border-slate-800 opacity-60' : 'bg-slate-900 border-slate-800 hover:border-slate-700'}`}
@@ -1942,8 +2058,8 @@ export default function App() {
 
                       <div className="flex items-center gap-3 shrink-0">
                         <div className="text-right hidden sm:block">
-                          <p className="text-xs font-mono font-bold text-red-400">
-                            {isPassed ? 'Sudah Dilewati' : distDisplay}
+                          <p className={`text-xs font-mono font-bold ${isCurrent ? 'text-red-400' : isPassed ? 'text-emerald-400' : 'text-slate-400'}`}>
+                            {isPassed ? 'Sudah Dilewati' : isCurrent ? 'Point Sasaran' : 'Point Berikutnya'}
                           </p>
                           <p className="text-[11px] font-mono text-slate-400">Est: {cp.estTime}</p>
                         </div>
@@ -1965,7 +2081,7 @@ export default function App() {
                             e.stopPropagation();
                             setAutoAdvancePoint(false);
                             setCurrentCheckpointIndex(idx);
-                            const script = `Perhatian seluruh penumpang, bus STJ Viola sebentar lagi akan tiba di point ${cp.name}.`;
+                            const script = `Perhatian seluruh penumpang. Bus STJ Viola sebentar lagi akan tiba di titik pemberhentian point ${cp.name}. Bagi penumpang yang akan turun, dipersilakan mempersiapkan barang bawaan agar tidak tertinggal. Terima kasih.`;
                             speakAnnouncement(script, `point-${cp.id}`);
                           }}
                           disabled={isAudioLoading}
@@ -2075,28 +2191,103 @@ export default function App() {
         {/* TAB 5: MAPS */}
         {activeTab === 'map' && (
           <div className="space-y-6">
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-5">
+              
+              {/* Header with Title and Action Buttons */}
               <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
                 <div>
                   <h2 className="text-xl font-bold text-white flex items-center gap-2">
                     <MapIcon className="w-5 h-5 text-blue-500" />
-                    Google Maps Live Navigation ({routeDirection === 'surabaya-magetan' ? 'Surabaya → Magetan' : 'Magetan → Surabaya'})
+                    Google Maps Rute Navigasi STJ Viola
                   </h2>
-                  <p className="text-sm text-slate-400 mt-1">Peta rute resmi langsung terhubung dengan Google Maps.</p>
+                  <p className="text-sm text-slate-400 mt-1">
+                    {isSbyToMg 
+                      ? 'Rute Keberangkatan Awal: Terminal Purabaya Bungurasih (Waru) → Tujuan Akhir: Terminal Magetan' 
+                      : 'Rute Keberangkatan Awal: Terminal Magetan → Tujuan Akhir: Terminal Purabaya Bungurasih (Waru)'}
+                  </p>
                 </div>
-                <a 
-                  href={routeDirection === 'surabaya-magetan' ? "https://maps.google.com/?q=Terminal+Purabaya+to+Terminal+Magetan" : "https://maps.google.com/?q=Terminal+Magetan+to+Terminal+Purabaya"}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl transition-all shadow-md whitespace-nowrap"
-                >
-                  Buka di Aplikasi Google Maps ↗
-                </a>
+                
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <button 
+                    onClick={() => {
+                      setRouteDirection(isSbyToMg ? 'magetan-surabaya' : 'surabaya-magetan');
+                    }}
+                    className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold rounded-xl flex items-center gap-2 transition-all shadow-sm"
+                    title="Tukar arah rute keberangkatan awal dan tujuan akhir"
+                  >
+                    <ArrowRightLeft className="w-4 h-4 text-red-400" />
+                    <span>Tukar Arah ({isSbyToMg ? 'Magetan → SBY' : 'SBY → Magetan'})</span>
+                  </button>
+
+                  <a 
+                    href={googleMapsExternalUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl transition-all shadow-md flex items-center gap-1.5 whitespace-nowrap"
+                  >
+                    <span>Buka Rute di Google Maps ↗</span>
+                  </a>
+                </div>
               </div>
 
-              <div className="w-full h-[500px] rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 shadow-inner">
+              {/* Origin & Destination Route Summary Badges */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-4 bg-slate-950/80 border border-slate-800 rounded-2xl">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold text-xs shrink-0 font-mono">
+                    AWAL
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-mono text-emerald-400 uppercase tracking-wider font-semibold">
+                      Titik Keberangkatan Awal
+                    </p>
+                    <p className="text-sm font-bold text-white">
+                      {originName}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-red-600/20 text-red-400 border border-red-500/30 flex items-center justify-center font-bold text-xs shrink-0 font-mono">
+                    AKHIR
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-mono text-red-400 uppercase tracking-wider font-semibold">
+                      Titik Tujuan Akhir
+                    </p>
+                    <p className="text-sm font-bold text-white">
+                      {destinationName}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Checkpoint Quick Location Search */}
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-slate-400 flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-red-500" />
+                  Titik Point di Sepanjang Rute Ini:
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {checkpoints.map((cp, idx) => (
+                    <a
+                      key={cp.id}
+                      href={`https://www.google.com/maps/search/?api=1&query=${cp.lat},${cp.lng}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-2.5 py-1 rounded-lg bg-slate-950 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 text-xs font-mono transition-all flex items-center gap-1"
+                      title={`Buka ${cp.name} di Google Maps`}
+                    >
+                      <span className="text-slate-500 font-bold">#{idx + 1}</span>
+                      <span>{cp.name.split(' (')[0]}</span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+
+              {/* Interactive Google Maps Direction Iframe */}
+              <div className="w-full h-[520px] rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 shadow-inner relative">
                 <iframe 
-                  title="Google Maps Route STJ Viola"
+                  title={`Google Maps Rute STJ Viola: ${originName} ke ${destinationName}`}
                   src={googleMapsEmbedUrl}
                   width="100%" 
                   height="100%" 

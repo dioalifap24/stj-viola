@@ -60,27 +60,31 @@ app.post('/api/generate-announcement', async (req, res) => {
     const dirText = routeDirection === 'magetan-surabaya' ? 'Magetan menuju Surabaya' : 'Surabaya menuju Magetan';
 
     if (type === 'welcome') {
-      promptText = `Buatlah naskah pengumuman resmi kondektur / penyiar bus PO. Sudiro Tungga Jaya (STJ) armada "Viola" Kelas Ekonomi rute ${dirText}. Awali dengan "Perhatian... Perhatian kepada seluruh penumpang...". Sambut penumpang dan ingatkan menjaga barang bawaan. JANGAN pernah menyebutkan angka jarak tempuh, kilometer, ataupun angka kecepatan.`;
+      promptText = `Buatlah naskah pengumuman resmi kondektur / penyiar bus PO. Sudiro Tungga Jaya (STJ) armada "Viola" Kelas Ekonomi rute ${dirText}. Awali dengan "Perhatian... Selamat datang Bapak, Ibu, dan seluruh penumpang setia Sudiro Tungga Jaya armada Viola kelas Ekonomi...". Perkenalkan pengemudi/sopir kita bernama Mas Rifai dan kondektur bernama Mas Jully, serta ingatkan menjaga barang bawaan. JANGAN pernah menyebutkan angka jarak tempuh, kilometer, ataupun angka kecepatan.`;
     } else if (type === 'ticket-payment') {
       promptText = `Buatlah pengumuman kondektur bus STJ Viola Ekonomi untuk persiapan pemeriksaan tiket dan pembayaran ongkos bus. Awali dengan "Perhatian kepada seluruh penumpang...". JANGAN menyebutkan angka jarak tempuh kilometer ataupun kecepatan.`;
     } else if (type === 'checkpoint') {
       promptText = `Buatlah naskah pengumuman kondektur bus STJ Viola yang akan tiba di titik pemberhentian "${locationName}" (rute ${dirText}). Awali dengan "Perhatian seluruh penumpang... Bus STJ Viola sebentar lagi akan tiba di ${locationName}...". Ingatkan penumpang yang turun untuk bersiap dan memeriksa barang. JANGAN menyebutkan angka jarak tempuh kilometer ataupun kecepatan.`;
     } else {
-      promptText = `Buatlah pengumuman bus STJ Viola dengan topik: "${customPrompt}". Gaya bahasa kondektur bus ramah, profesional, dan berwibawa. Jangan menyebutkan angka jarak tempuh atau angka kecepatan.`;
+      promptText = `Buatlah pengumuman bus STJ Viola dengan topik: "${customPrompt}". Gaya bahasa kondektur bus ramah, profesional, dan berwibawa. JANGAN pernah memperkenalkan nama sopir ataupun kondektur (perkenalan kru hanya untuk pengumuman sambutan di awal perjalanan saja). JANGAN menyebutkan angka jarak tempuh kilometer atau angka kecepatan. Langsung sampaikan inti pengumuman dengan sopan.`;
     }
 
     const response = await ai.models.generateContent({
       model: 'gemini-3.8-flash',
       contents: promptText,
       config: {
-        systemInstruction: 'Anda adalah kondektur dan penyiar audio profesional untuk bus Sudiro Tungga Jaya (STJ) "Viola" rute Surabaya - Magetan. Awali pengumuman dengan ramah dan sopan seperti "Perhatian...". DILARANG menyebutkan angka sisa jarak tempuh ataupun angka kecepatan bus dalam pengumuman suara.',
+        systemInstruction: 'Anda adalah kondektur dan penyiar audio profesional untuk bus Sudiro Tungga Jaya (STJ) "Viola" rute Surabaya - Magetan. Awali pengumuman dengan ramah dan sopan seperti "Perhatian...". DILARANG memperkenalkan nama sopir ataupun kondektur (perkenalan kru bus hanya diizinkan pada pengumuman sambutan di awal keberangkatan saja). DILARANG menyebutkan angka sisa jarak tempuh ataupun angka kecepatan bus dalam pengumuman suara.',
       }
     });
 
     res.json({ script: response.text || 'Perhatian... Perhatian kepada seluruh penumpang STJ Viola...' });
   } catch (error: any) {
-    console.error('Gemini API Error:', error);
-    res.status(500).json({ error: error.message || 'Gagal menghasilkan naskah pengumuman.' });
+    console.error('Gemini API Error, using graceful fallback:', error?.message || error);
+    const { customPrompt } = req.body;
+    const cleanText = customPrompt 
+      ? `Perhatian kepada seluruh penumpang bus STJ Viola. ${customPrompt}. Terima kasih atas perhatian dan kerja sama Anda.`
+      : 'Perhatian kepada seluruh penumpang bus Sudiro Tungga Jaya Viola. Silakan menikmati perjalanan Anda dan tetap menjaga barang bawaan.';
+    res.json({ script: cleanText });
   }
 });
 
@@ -138,27 +142,30 @@ app.post('/api/synthesize-speech', async (req, res) => {
       mimeType: 'audio/wav',
     });
   } catch (error: any) {
-    console.warn('Gemini TTS Error, falling back to Google TTS API:', error?.message || error);
-    try {
-      const getAudioFn = (googleTTS as any).getAllAudioBase64 || (googleTTS as any).default?.getAllAudioBase64;
-      if (!getAudioFn) {
-        throw new Error('getAllAudioBase64 is not a function');
+    console.warn('Gemini TTS Error:', error?.message || error);
+    // Only fall back to Google TTS if the requested voice is female (Kore)
+    // For male voices (Fenrir, Puck, Charon), never send female audio!
+    if (voiceName === 'Kore') {
+      try {
+        const getAudioFn = (googleTTS as any).getAllAudioBase64 || (googleTTS as any).default?.getAllAudioBase64;
+        if (getAudioFn) {
+          const chunks = await getAudioFn(text, {
+            lang: 'id',
+            slow: false,
+            timeout: 10000,
+          });
+          const buffers = chunks.map((c: any) => Buffer.from(c.base64, 'base64'));
+          const combined = Buffer.concat(buffers);
+          return res.json({
+            audioBase64: combined.toString('base64'),
+            mimeType: 'audio/mp3',
+          });
+        }
+      } catch (fallbackErr: any) {
+        console.error('Google TTS fallback also failed:', fallbackErr?.message || fallbackErr);
       }
-      const chunks = await getAudioFn(text, {
-        lang: 'id',
-        slow: false,
-        timeout: 10000,
-      });
-      const buffers = chunks.map((c: any) => Buffer.from(c.base64, 'base64'));
-      const combined = Buffer.concat(buffers);
-      return res.json({
-        audioBase64: combined.toString('base64'),
-        mimeType: 'audio/mp3',
-      });
-    } catch (fallbackErr: any) {
-      console.error('Google TTS fallback also failed:', fallbackErr?.message || fallbackErr);
-      res.status(500).json({ error: 'Gagal memproses suara: ' + (fallbackErr?.message || error?.message) });
     }
+    res.status(500).json({ error: 'Gagal memproses suara: ' + (error?.message || error) });
   }
 });
 
