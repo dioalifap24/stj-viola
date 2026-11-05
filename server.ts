@@ -60,7 +60,7 @@ app.post('/api/generate-announcement', async (req, res) => {
     const dirText = routeDirection === 'magetan-surabaya' ? 'Magetan menuju Surabaya' : 'Surabaya menuju Magetan';
 
     if (type === 'welcome') {
-      promptText = `Buatlah naskah pengumuman resmi kondektur / penyiar bus PO. Sudiro Tungga Jaya (STJ) armada "Viola" Kelas Ekonomi rute ${dirText}. Awali dengan "Perhatian... Selamat datang Bapak, Ibu, dan seluruh penumpang setia Sudiro Tungga Jaya armada Viola kelas Ekonomi...". Perkenalkan pengemudi/sopir kita bernama Mas Rifai dan kondektur bernama Mas Jully, serta ingatkan menjaga barang bawaan. JANGAN pernah menyebutkan angka jarak tempuh, kilometer, ataupun angka kecepatan.`;
+      promptText = `Buatlah naskah pengumuman resmi kondektur / penyiar bus PO. Sudiro Tungga Jaya (STJ) armada "Viola" Kelas Ekonomi rute ${dirText}. Awali dengan "Perhatian... Selamat datang Bapak, Ibu, dan seluruh penumpang setia Sudiro Tungga Jaya armada Viola kelas Ekonomi...". Perkenalkan pengemudi/sopir kita bernama Mas Rifai dan kondektur bernama Jully, serta ingatkan menjaga barang bawaan. JANGAN pernah menyebutkan angka jarak tempuh, kilometer, ataupun angka kecepatan.`;
     } else if (type === 'ticket-payment') {
       promptText = `Buatlah pengumuman kondektur bus STJ Viola Ekonomi untuk persiapan pemeriksaan tiket dan pembayaran ongkos bus. Awali dengan "Perhatian kepada seluruh penumpang...". JANGAN menyebutkan angka jarak tempuh kilometer ataupun kecepatan.`;
     } else if (type === 'checkpoint') {

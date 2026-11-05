@@ -22,7 +22,7 @@ const checkpoints = [
 const generalAudios = [
   {
     name: 'welcome',
-    text: 'Perhatian... Selamat datang Bapak, Ibu, dan seluruh penumpang setia Sudiro Tungga Jaya armada Viola kelas Ekonomi. Perjalanan kita kali ini dipandu oleh pengemudi kita Mas Rifai, dan didampingi oleh saya sendiri kondektur Mas Jully. Selamat menikmati perjalanan bersama STJ Viola. Silakan duduk dengan nyaman dan tetap menjaga barang bawaan Anda. Terima kasih dan selamat menikmati perjalanan.'
+    text: 'Perhatian... Selamat datang Bapak, Ibu, dan seluruh penumpang setia Sudiro Tungga Jaya armada Viola kelas Ekonomi. Perjalanan kita kali ini dipandu oleh pengemudi kita Mas Rifai, dan didampingi oleh saya sendiri kondektur Jully. Selamat menikmati perjalanan bersama STJ Viola. Silakan duduk dengan nyaman dan tetap menjaga barang bawaan Anda. Terima kasih dan selamat menikmati perjalanan.'
   },
   {
     name: 'ticket',

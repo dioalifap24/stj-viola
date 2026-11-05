@@ -121,7 +121,7 @@ export default function App() {
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [voiceVolume, setVoiceVolume] = useState<number>(1.0);
   const [selectedVoice, setSelectedVoice] = useState<'Fenrir' | 'Puck' | 'Charon' | 'Kore'>('Fenrir');
-  const [enableChime, setEnableChime] = useState<boolean>(true);
+  const [enableChime, setEnableChime] = useState<boolean>(false);
   const [isAudioLoading, setIsAudioLoading] = useState<boolean>(false);
   const [activeAudioCategory, setActiveAudioCategory] = useState<string | null>(null);
   const [voiceEngineStatus, setVoiceEngineStatus] = useState<string>('Studio Suara Manusia (Bebas Robot)');
@@ -962,7 +962,7 @@ export default function App() {
   // Soundboard scripts - 100% Suara Manusia (Bebas Robot & Tanpa Sebutan Angka Jarak Tempuh/Kecepatan)
   const handlePlayWelcome = () => {
     const routeName = routeDirection === 'surabaya-magetan' ? 'Surabaya menuju Magetan' : 'Magetan menuju Surabaya';
-    const script = `Perhatian... Selamat datang Bapak, Ibu, dan seluruh penumpang setia Sudiro Tungga Jaya armada Viola kelas Ekonomi rute ${routeName}. Perjalanan kita kali ini dipandu oleh pengemudi kita Mas Rifai, dan didampingi oleh saya sendiri kondektur Mas Jully. Selamat menikmati perjalanan bersama STJ Viola. Silakan duduk dengan nyaman dan tetap menjaga barang bawaan Anda. Terima kasih dan selamat menikmati perjalanan.`;
+    const script = `Perhatian... Selamat datang Bapak, Ibu, dan seluruh penumpang setia Sudiro Tungga Jaya armada Viola kelas Ekonomi rute ${routeName}. Perjalanan kita kali ini dipandu oleh pengemudi kita Mas Rifai, dan didampingi oleh saya sendiri kondektur Jully. Selamat menikmati perjalanan bersama STJ Viola. Silakan duduk dengan nyaman dan tetap menjaga barang bawaan Anda. Terima kasih dan selamat menikmati perjalanan.`;
     speakAnnouncement(script, 'welcome');
   };
 
@@ -1730,30 +1730,7 @@ export default function App() {
                 </button>
               </div>
 
-              {/* 5. Menjelang Rest Area */}
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg flex flex-col justify-between hover:border-red-500/50 transition-all relative overflow-hidden">
-                <div className="absolute top-2.5 right-2.5">
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-600/20 text-purple-400 border border-purple-500/30 font-mono font-bold">
-                    100% Suara Manusia
-                  </span>
-                </div>
-                <div>
-                  <div className="w-11 h-11 rounded-xl bg-purple-600/10 text-purple-500 flex items-center justify-center mb-3">
-                    <Clock className="w-6 h-6" />
-                  </div>
-                  <h3 className="text-base font-bold text-white mb-1.5">5. Menjelang Rest Area</h3>
-                  <p className="text-xs text-slate-400 leading-relaxed mb-4">
-                    Pemberitahuan istirahat di Rest Area (toilet & makan) sekitar 15 menit lagi.
-                  </p>
-                </div>
-                <button 
-                  onClick={handlePlayRestArea}
-                  disabled={isAudioLoading}
-                  className="w-full py-2.5 px-4 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-all shadow-md"
-                >
-                  <Zap className="w-4 h-4" /> Putar Rest Area
-                </button>
-              </div>
+
 
               {/* 6. Tol Trans Jawa & Klakson Bus */}
               <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg flex flex-col justify-between hover:border-red-500/50 transition-all relative overflow-hidden">
@@ -2056,12 +2033,24 @@ export default function App() {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-3 shrink-0">
-                        <div className="text-right hidden sm:block">
+                      <div className="flex items-center gap-3 shrink-0" onClick={(e) => e.stopPropagation()}>
+                        <div className="text-right">
                           <p className={`text-xs font-mono font-bold ${isCurrent ? 'text-red-400' : isPassed ? 'text-emerald-400' : 'text-slate-400'}`}>
                             {isPassed ? 'Sudah Dilewati' : isCurrent ? 'Point Sasaran' : 'Point Berikutnya'}
                           </p>
-                          <p className="text-[11px] font-mono text-slate-400">Est: {cp.estTime}</p>
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <span className="text-[10px] font-mono text-slate-400">Est:</span>
+                            <input 
+                              type="text"
+                              value={cp.estTime}
+                              onChange={(e) => {
+                                const newTime = e.target.value;
+                                setCheckpoints(prev => prev.map((item, i) => i === idx ? { ...item, estTime: newTime } : item));
+                              }}
+                              className="w-24 bg-slate-950 border border-slate-700 rounded px-2 py-0.5 text-xs font-mono text-amber-400 text-center focus:outline-none focus:border-red-500"
+                              title="Klik untuk mengubah jadwal tiba manual"
+                            />
+                          </div>
                         </div>
                         
                         <a
