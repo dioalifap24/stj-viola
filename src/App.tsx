@@ -21,6 +21,8 @@ import {
   GEMINI_VOICES, 
   VOICE_STYLES 
 } from './utils/speechEngine';
+import stjLogo from './assets/images/stj_official_logo_1793894658698.jpg';
+
 
 interface Checkpoint {
   id: string;
@@ -1077,24 +1079,24 @@ export default function App() {
     : "https://www.google.com/maps/dir/?api=1&origin=Terminal+Magetan+Jawa+Timur&destination=Terminal+Purabaya+Bungurasih+Waru+Sidoarjo&travelmode=driving";
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-red-600 selection:text-white">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-red-600 selection:text-white w-full max-w-full overflow-x-hidden">
       
       {/* Top Navigation Bar */}
-      <header className="flex items-center justify-between gap-4 px-4 sm:px-6 py-3.5 bg-slate-900 border-b border-slate-800 sticky top-0 z-50 shadow-lg">
+      <header className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2.5 sm:gap-4 px-3 sm:px-6 py-2.5 sm:py-3.5 bg-slate-900 border-b border-slate-800 sticky top-0 z-50 shadow-lg w-full max-w-full overflow-hidden">
         {/* Brand Zone */}
-        <div className="flex items-center gap-3 whitespace-nowrap shrink-0">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center shadow-md shadow-red-900/30">
-            <Bus className="w-6 h-6 text-white" />
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 shrink-0">
+          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-slate-950 border border-red-500/50 p-0.5 shadow-md shadow-red-900/40 shrink-0 flex items-center justify-center overflow-hidden">
+            <img src={stjLogo} alt="Logo Sudiro Tungga Jaya Official" className="w-full h-full object-cover rounded-lg" />
           </div>
-          <div>
-            <h1 className="text-base sm:text-lg font-bold tracking-tight text-white flex items-center gap-2">
-              STJ VIOLA <span className="text-[10px] sm:text-xs px-2 py-0.5 rounded-full bg-red-600/30 text-red-400 border border-red-500/30 font-mono">EKONOMI 2-3</span>
+          <div className="min-w-0">
+            <h1 className="text-sm sm:text-lg font-bold tracking-tight text-white flex items-center gap-1.5 truncate">
+              STJ VIOLA <span className="text-[9px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full bg-red-600/30 text-red-400 border border-red-500/30 font-mono shrink-0">EKONOMI 2-3</span>
             </h1>
-            <p className="text-[11px] text-slate-400">Kondektur Digital & Satelit GPS Realtime</p>
+            <p className="text-[10px] sm:text-[11px] text-slate-400 truncate">Kondektur Digital & Satelit GPS Realtime</p>
           </div>
         </div>
 
-        {/* Navigation Links */}
+        {/* Navigation Links (Desktop) */}
         <nav className="hidden lg:flex items-center gap-1.5 text-sm font-medium text-slate-300">
           <button 
             onClick={() => setActiveTab('soundboard')}
@@ -1129,17 +1131,17 @@ export default function App() {
         </nav>
 
         {/* Primary Action / Route Toggle */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           <button 
             onClick={() => {
               setRouteDirection(routeDirection === 'surabaya-magetan' ? 'magetan-surabaya' : 'surabaya-magetan');
               setAlertedCheckpoints([]);
               setProximityAlertActive(null);
             }}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-700 transition-all shadow-sm whitespace-nowrap"
+            className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 text-[11px] sm:text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-700 transition-all shadow-sm whitespace-nowrap"
             title="Tukar Arah Rute Bus"
           >
-            <ArrowRightLeft className="w-3.5 h-3.5 text-red-500" />
+            <ArrowRightLeft className="w-3.5 h-3.5 text-red-500 shrink-0" />
             <span className="font-mono font-bold text-slate-200">
               {routeDirection === 'surabaya-magetan' ? 'SBY - MG' : 'MG - SBY'}
             </span>
@@ -1147,74 +1149,74 @@ export default function App() {
 
           <button 
             onClick={locationMode === 'satelit_auto' ? useLiveDeviceGps : useSatelitAutoMode}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg border transition-all whitespace-nowrap ${
+            className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 text-[11px] sm:text-xs font-bold rounded-lg border transition-all whitespace-nowrap ${
               locationMode === 'satelit_auto'
                 ? 'bg-teal-500/20 text-teal-300 border-teal-500/40'
                 : 'bg-blue-600/20 text-blue-300 border-blue-500/40'
             }`}
             title="Ganti Mode GPS Satelit Otomatis / GPS Asli HP"
           >
-            <Satellite className="w-3.5 h-3.5 animate-pulse" />
-            <span className="hidden sm:inline">{locationMode === 'satelit_auto' ? 'Satelit Live' : 'GPS HP Asli'}</span>
+            <Satellite className="w-3.5 h-3.5 animate-pulse shrink-0" />
+            <span className="hidden xs:inline sm:inline">{locationMode === 'satelit_auto' ? 'Satelit Live' : 'GPS HP Asli'}</span>
           </button>
         </div>
       </header>
 
       {/* Mobile Tab Bar */}
-      <div className="flex lg:hidden bg-slate-900 border-b border-slate-800 px-4 py-2 gap-2 overflow-x-auto">
+      <div className="flex lg:hidden bg-slate-900 border-b border-slate-800 px-3 py-2 gap-1.5 overflow-x-auto w-full max-w-full">
         <button 
           onClick={() => setActiveTab('soundboard')}
-          className={`px-3 py-1.5 text-xs font-semibold rounded-md whitespace-nowrap ${activeTab === 'soundboard' ? 'bg-red-600 text-white' : 'bg-slate-800 text-slate-300'}`}
+          className={`px-3 py-1.5 text-xs font-semibold rounded-md whitespace-nowrap shrink-0 ${activeTab === 'soundboard' ? 'bg-red-600 text-white' : 'bg-slate-800 text-slate-300'}`}
         >
           Soundboard
         </button>
         <button 
           onClick={() => setActiveTab('checkpoints')}
-          className={`px-3 py-1.5 text-xs font-semibold rounded-md whitespace-nowrap ${activeTab === 'checkpoints' ? 'bg-red-600 text-white' : 'bg-slate-800 text-slate-300'}`}
+          className={`px-3 py-1.5 text-xs font-semibold rounded-md whitespace-nowrap shrink-0 ${activeTab === 'checkpoints' ? 'bg-red-600 text-white' : 'bg-slate-800 text-slate-300'}`}
         >
           GPS Point
         </button>
         <button 
           onClick={() => setActiveTab('manifest')}
-          className={`px-3 py-1.5 text-xs font-semibold rounded-md whitespace-nowrap ${activeTab === 'manifest' ? 'bg-red-600 text-white' : 'bg-slate-800 text-slate-300'}`}
+          className={`px-3 py-1.5 text-xs font-semibold rounded-md whitespace-nowrap shrink-0 ${activeTab === 'manifest' ? 'bg-red-600 text-white' : 'bg-slate-800 text-slate-300'}`}
         >
           Manifest (2-3)
         </button>
         <button 
           onClick={() => setActiveTab('operations')}
-          className={`px-3 py-1.5 text-xs font-semibold rounded-md whitespace-nowrap ${activeTab === 'operations' ? 'bg-red-600 text-white' : 'bg-slate-800 text-slate-300'}`}
+          className={`px-3 py-1.5 text-xs font-semibold rounded-md whitespace-nowrap shrink-0 ${activeTab === 'operations' ? 'bg-red-600 text-white' : 'bg-slate-800 text-slate-300'}`}
         >
           Operasional
         </button>
         <button 
           onClick={() => setActiveTab('map')}
-          className={`px-3 py-1.5 text-xs font-semibold rounded-md whitespace-nowrap ${activeTab === 'map' ? 'bg-red-600 text-white' : 'bg-slate-800 text-slate-300'}`}
+          className={`px-3 py-1.5 text-xs font-semibold rounded-md whitespace-nowrap shrink-0 ${activeTab === 'map' ? 'bg-red-600 text-white' : 'bg-slate-800 text-slate-300'}`}
         >
           Maps
         </button>
       </div>
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6">
+      <main className="flex-1 max-w-7xl w-full max-w-full mx-auto p-3.5 sm:p-6 space-y-4 sm:space-y-6 overflow-x-hidden">
         
         {/* Active Speech / Loading Banner */}
         {(isPlaying || isAudioLoading) && (
-          <div className="bg-gradient-to-r from-red-950/95 via-slate-900 to-red-950/95 border-2 border-red-500/70 rounded-2xl p-4 flex items-center justify-between gap-4 shadow-2xl animate-pulse">
-            <div className="flex items-center gap-3.5 min-w-0">
-              <div className="w-11 h-11 rounded-xl bg-red-600 flex items-center justify-center text-white shrink-0 shadow-lg shadow-red-600/40">
+          <div className="bg-gradient-to-r from-red-950/95 via-slate-900 to-red-950/95 border-2 border-red-500/70 rounded-2xl p-3.5 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 shadow-2xl animate-pulse w-full max-w-full overflow-hidden">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-red-600 flex items-center justify-center text-white shrink-0 shadow-lg shadow-red-600/40">
                 {isAudioLoading ? (
                   <Loader2 className="w-5 h-5 animate-spin text-white" />
                 ) : (
                   <Volume2 className="w-5 h-5 animate-bounce text-white" />
                 )}
               </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-[11px] text-red-400 font-mono font-bold uppercase tracking-wider flex items-center gap-1.5">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[10px] sm:text-[11px] text-red-400 font-mono font-bold uppercase tracking-wider flex items-center gap-1">
                     <span className="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
                     {isAudioLoading ? 'MEMPROSES SUARA MANUSIA...' : 'SUARA MANUSIA ASLI AKTIF'}
                   </span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-600/30 text-red-200 border border-red-500/30 font-mono">
+                  <span className="text-[9px] sm:text-[10px] px-2 py-0.5 rounded-full bg-red-600/30 text-red-200 border border-red-500/30 font-mono truncate max-w-full">
                     {voiceEngineStatus}
                   </span>
                 </div>
@@ -1225,7 +1227,7 @@ export default function App() {
             </div>
             <button 
               onClick={stopSpeech}
-              className="px-3 py-1.5 bg-red-800 hover:bg-red-700 text-white text-xs font-bold rounded-lg shrink-0 flex items-center gap-1.5 shadow-md transition-all border border-red-600/40"
+              className="w-full sm:w-auto px-3 py-1.5 bg-red-800 hover:bg-red-700 text-white text-xs font-bold rounded-lg shrink-0 flex items-center justify-center gap-1.5 shadow-md transition-all border border-red-600/40"
               title="Hentikan audio pengumuman suara"
             >
               <VolumeX className="w-4 h-4" /> Stop
@@ -1235,29 +1237,29 @@ export default function App() {
 
         {/* 500-Meter Proximity Alert Banner (Beep & Vibration Alert for Conductor) */}
         {proximityAlertActive && (
-          <div className="bg-gradient-to-r from-amber-950/95 via-red-950/90 to-amber-950/95 border-2 border-amber-500/80 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-2xl animate-pulse">
-            <div className="flex items-center gap-3.5">
-              <div className="w-11 h-11 rounded-xl bg-amber-500 flex items-center justify-center text-slate-950 shrink-0 shadow-lg shadow-amber-500/40">
-                <BellRing className="w-6 h-6 text-slate-950 animate-bounce" />
+          <div className="bg-gradient-to-r from-amber-950/95 via-red-950/90 to-amber-950/95 border-2 border-amber-500/80 rounded-2xl p-3.5 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 shadow-2xl animate-pulse w-full max-w-full overflow-hidden">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-amber-500 flex items-center justify-center text-slate-950 shrink-0 shadow-lg shadow-amber-500/40">
+                <BellRing className="w-5 h-5 sm:w-6 sm:h-6 text-slate-950 animate-bounce" />
               </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-red-600 text-white font-mono font-bold uppercase">
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[9px] sm:text-[10px] px-2 py-0.5 rounded-full bg-red-600 text-white font-mono font-bold uppercase">
                     ⚠️ ALERT 500 METER
                   </span>
-                  <span className="text-xs text-amber-300 font-mono flex items-center gap-1">
-                    <Vibrate className="w-3.5 h-3.5" /> Beep & Getaran Aktif
+                  <span className="text-[11px] text-amber-300 font-mono flex items-center gap-1">
+                    <Vibrate className="w-3.5 h-3.5" /> Beep & Getaran
                   </span>
                 </div>
-                <h3 className="text-base font-bold text-white mt-0.5">
+                <h3 className="text-sm sm:text-base font-bold text-white mt-0.5 truncate">
                   Mendekati Point: <span className="text-amber-400 underline decoration-amber-400">{proximityAlertActive.name}</span>
                 </h3>
-                <p className="text-xs text-amber-200/90">
-                  Bus STJ Viola sebentar lagi akan tiba di point <strong className="text-white font-mono">{proximityAlertActive.name}</strong>. Kondektur harap bersiap memberi aba-aba.
+                <p className="text-xs text-amber-200/90 line-clamp-2 sm:line-clamp-none">
+                  Bus STJ Viola sebentar lagi akan tiba di point <strong className="text-white font-mono">{proximityAlertActive.name}</strong>.
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto shrink-0">
               <button 
                 onClick={playProximityAlertSound}
                 className="flex-1 sm:flex-none px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-lg shadow-md flex items-center justify-center gap-1"
@@ -1280,24 +1282,25 @@ export default function App() {
           </div>
         )}
 
+
         {/* =========================================================================
             CARD 1: EXACT MATCHING DESIGN FROM USER SCREENSHOT
             ========================================================================= */}
-        <div className="bg-slate-900/95 border border-slate-800/90 rounded-3xl p-6 sm:p-7 shadow-2xl relative overflow-hidden">
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-teal-500/15 border border-teal-500/30 text-teal-400 flex items-center justify-center shrink-0 shadow-lg shadow-teal-950/40">
-              <Satellite className="w-6 h-6 animate-pulse" />
+        <div className="bg-slate-900/95 border border-slate-800/90 rounded-2xl sm:rounded-3xl p-4 sm:p-7 shadow-2xl relative overflow-hidden w-full max-w-full">
+          <div className="flex items-start gap-3 sm:gap-4">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-slate-950 border border-red-500/40 p-0.5 flex items-center justify-center shrink-0 shadow-lg shadow-red-950/40 overflow-hidden">
+              <img src={stjLogo} alt="Logo PO Sudiro Tungga Jaya Resmi" className="w-full h-full object-cover rounded-xl" />
             </div>
 
             <div className="flex-1 min-w-0">
               {/* Satellite Indicator */}
-              <div className="flex items-center gap-2 text-xs font-medium text-emerald-400 mb-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>{gpsSourceStatus}</span>
+              <div className="flex items-center gap-2 text-xs font-medium text-emerald-400 mb-1.5 truncate">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
+                <span className="truncate">{gpsSourceStatus}</span>
               </div>
 
               {/* Point Name */}
-              <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight flex items-baseline gap-2 flex-wrap">
+              <h2 className="text-lg sm:text-2xl font-bold text-white tracking-tight flex items-baseline gap-2 flex-wrap">
                 <span>Point: {activeCheckpoint.name}</span>
               </h2>
 
@@ -1310,24 +1313,24 @@ export default function App() {
               </p>
 
               {/* Real-time Speed and Point Schedule Badges */}
-              <div className="mt-4 flex flex-wrap items-center gap-3">
-                <div className="bg-slate-950/90 border border-slate-800/90 rounded-2xl px-6 py-2.5 flex items-center gap-3 shadow-inner">
-                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></div>
+              <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 w-full">
+                <div className="bg-slate-950/90 border border-slate-800/90 rounded-xl sm:rounded-2xl px-4 py-2 sm:px-6 sm:py-2.5 flex items-center gap-3 shadow-inner w-full sm:w-auto">
+                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping shrink-0"></div>
                   <div>
-                    <p className="text-[10px] font-mono text-slate-400 uppercase tracking-widest font-semibold">
+                    <p className="text-[9px] sm:text-[10px] font-mono text-slate-400 uppercase tracking-widest font-semibold">
                       KECEPATAN REAL-TIME
                     </p>
-                    <p className="text-xl sm:text-2xl font-mono font-bold text-emerald-400">
+                    <p className="text-lg sm:text-2xl font-mono font-bold text-emerald-400">
                       {gpsSpeedKmh} <span className="text-xs text-slate-400 font-sans">KM/Jam</span>
                     </p>
                   </div>
                 </div>
 
-                <div className="bg-slate-950/90 border border-slate-800/90 rounded-2xl px-6 py-2.5 shadow-inner">
-                  <p className="text-[10px] font-mono text-slate-400 uppercase tracking-widest font-semibold">
+                <div className="bg-slate-950/90 border border-slate-800/90 rounded-xl sm:rounded-2xl px-4 py-2 sm:px-6 sm:py-2.5 shadow-inner w-full sm:w-auto">
+                  <p className="text-[9px] sm:text-[10px] font-mono text-slate-400 uppercase tracking-widest font-semibold">
                     JADWAL TIBA POINT
                   </p>
-                  <p className="text-xl sm:text-2xl font-mono font-bold text-white">
+                  <p className="text-lg sm:text-2xl font-mono font-bold text-white">
                     {activeCheckpoint.estTime}
                   </p>
                 </div>
@@ -1340,55 +1343,55 @@ export default function App() {
         {/* =========================================================================
             CARD 2: EXACT STATUS SATELIT GPS REAL-TIME (FROM USER SCREENSHOT)
             ========================================================================= */}
-        <div className="bg-slate-900/95 border border-slate-800/90 rounded-3xl p-6 sm:p-7 shadow-2xl space-y-4">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-teal-500/15 border border-teal-500/30 text-teal-400 flex items-center justify-center shrink-0 shadow-lg shadow-teal-950/40">
-              <Satellite className="w-6 h-6 text-teal-400" />
+        <div className="bg-slate-900/95 border border-slate-800/90 rounded-2xl sm:rounded-3xl p-4 sm:p-7 shadow-2xl space-y-4 w-full max-w-full overflow-hidden">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-slate-950 border border-red-500/40 p-0.5 flex items-center justify-center shrink-0 shadow-lg shadow-red-950/40 overflow-hidden">
+              <img src={stjLogo} alt="Logo PO Sudiro Tungga Jaya Resmi" className="w-full h-full object-cover rounded-xl" />
             </div>
-            <div>
-              <h3 className="text-base sm:text-lg font-bold text-white">
-                Status Satelit GPS Real-time
+            <div className="min-w-0 flex-1">
+              <h3 className="text-base sm:text-lg font-bold text-white truncate flex items-center gap-2">
+                <span>Status Satelit GPS Real-time</span>
               </h3>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-slate-400 mt-0.5 line-clamp-1 sm:line-clamp-none">
                 Kecepatan bus diambil otomatis dari satelit GPS / Google Maps perangkat
               </p>
             </div>
           </div>
 
-          <div className="border-t border-slate-800/80 pt-4 space-y-3 text-xs sm:text-sm">
-            <div className="flex justify-between items-center py-1.5 border-b border-slate-800/50">
-              <span className="text-slate-400 font-medium">Status</span>
-              <span className="text-emerald-400 font-semibold text-right">
+          <div className="border-t border-slate-800/80 pt-3 sm:pt-4 space-y-2.5 sm:space-y-3 text-xs sm:text-sm">
+            <div className="flex justify-between items-center py-1 border-b border-slate-800/50 gap-2">
+              <span className="text-slate-400 font-medium shrink-0">Status</span>
+              <span className="text-emerald-400 font-semibold text-right truncate">
                 {locationMode === 'device' ? 'Satelit GPS Live Perangkat' : 'Menggunakan Jalur Otomatis Satelit STJ Viola'}
               </span>
             </div>
 
-            <div className="flex justify-between items-center py-1.5 border-b border-slate-800/50">
-              <span className="text-slate-400 font-medium">Sumber:</span>
-              <span className="text-emerald-400 font-mono font-semibold">
+            <div className="flex justify-between items-center py-1 border-b border-slate-800/50 gap-2">
+              <span className="text-slate-400 font-medium shrink-0">Sumber:</span>
+              <span className="text-emerald-400 font-mono font-semibold truncate">
                 {locationMode === 'device' ? '(GPS Satelit HP Real-time)' : '(Real-time)'}
               </span>
             </div>
 
-            <div className="flex justify-between items-center py-1.5 border-b border-slate-800/50">
-              <span className="text-slate-400 font-medium">Kecepatan Terdeteksi:</span>
-              <span className="text-white font-mono font-bold text-base">
+            <div className="flex justify-between items-center py-1 border-b border-slate-800/50 gap-2">
+              <span className="text-slate-400 font-medium shrink-0">Kecepatan Terdeteksi:</span>
+              <span className="text-white font-mono font-bold text-sm sm:text-base">
                 {gpsSpeedKmh} KM/Jam
               </span>
             </div>
 
-            <div className="flex justify-between items-center py-1.5">
-              <span className="text-slate-400 font-medium">Jadwal Tiba Point:</span>
-              <span className="text-white font-mono font-bold text-base">
+            <div className="flex justify-between items-center py-1 gap-2">
+              <span className="text-slate-400 font-medium shrink-0">Jadwal Tiba Point:</span>
+              <span className="text-white font-mono font-bold text-sm sm:text-base">
                 {activeCheckpoint.estTime}
               </span>
             </div>
           </div>
 
           {/* Quick Simulation controls bar */}
-          <div className="pt-3 border-t border-slate-800/60 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="pt-3 border-t border-slate-800/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 sm:gap-3 text-xs w-full">
             <div className="flex items-center gap-2">
-              <span className="text-slate-400 font-mono text-[11px]">Mode Simulasi:</span>
+              <span className="text-slate-400 font-mono text-[11px] shrink-0">Mode Simulasi:</span>
               <button
                 onClick={() => setIsAutoMoving(!isAutoMoving)}
                 className={`px-3 py-1 rounded-lg text-xs font-semibold border flex items-center gap-1.5 transition-all ${
@@ -1400,16 +1403,16 @@ export default function App() {
               </button>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
               <button
                 onClick={useLiveDeviceGps}
-                className="px-3 py-1 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/30 rounded-lg text-xs font-semibold flex items-center gap-1.5"
+                className="flex-1 sm:flex-none px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/30 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5"
               >
                 <LocateFixed className="w-3.5 h-3.5" /> Pakai Sensor GPS HP
               </button>
               <button
                 onClick={useSatelitAutoMode}
-                className="px-3 py-1 bg-teal-600/20 hover:bg-teal-600/30 text-teal-400 border border-teal-500/30 rounded-lg text-xs font-semibold flex items-center gap-1.5"
+                className="flex-1 sm:flex-none px-3 py-1.5 bg-teal-600/20 hover:bg-teal-600/30 text-teal-400 border border-teal-500/30 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5"
               >
                 <Satellite className="w-3.5 h-3.5" /> Pakai Jalur Satelit STJ
               </button>
@@ -1420,27 +1423,27 @@ export default function App() {
         {/* =========================================================================
             CARD 3: PENGATURAN SUARA MANUSIA (FROM USER SCREENSHOT)
             ========================================================================= */}
-        <div className="bg-slate-900/95 border border-slate-800/90 rounded-3xl p-6 sm:p-7 shadow-2xl space-y-5">
+        <div className="bg-slate-900/95 border border-slate-800/90 rounded-2xl sm:rounded-3xl p-4 sm:p-7 shadow-2xl space-y-4 sm:space-y-5 w-full max-w-full overflow-hidden">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800/80">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center shrink-0 shadow-lg shadow-amber-950/40">
-                <Clock className="w-6 h-6 text-amber-400" />
+            <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-slate-950 border border-red-500/40 p-0.5 flex items-center justify-center shrink-0 shadow-lg shadow-red-950/40 overflow-hidden">
+                <img src={stjLogo} alt="Logo PO Sudiro Tungga Jaya Resmi" className="w-full h-full object-cover rounded-xl" />
               </div>
-              <div>
-                <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+              <div className="min-w-0">
+                <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2 truncate">
                   Pengaturan Suara Manusia
                 </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <p className="text-xs text-slate-400 mt-0.5 line-clamp-1 sm:line-clamp-none">
                   100% suara manusia asli berkualitas rekaman studio (Bebas Robot) — Offline & Siap GitHub Pages
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto shrink-0">
               <button
                 onClick={handleTestSampleVoice}
                 disabled={isAudioLoading || isPlaying}
-                className="px-4 py-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-md flex items-center gap-1.5 transition-all"
+                className="flex-1 sm:flex-initial px-3.5 py-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-md flex items-center justify-center gap-1.5 transition-all"
                 title="Dengarkan contoh suara manusia asli"
               >
                 {isAudioLoading && activeAudioCategory === 'test' ? (
@@ -1453,7 +1456,7 @@ export default function App() {
 
               <button
                 onClick={() => setShowVoiceSettingsModal(true)}
-                className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl border border-slate-700 flex items-center gap-1.5"
+                className="flex-1 sm:flex-initial px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl border border-slate-700 flex items-center justify-center gap-1.5"
                 title="Pengaturan Mode Deploy GitHub"
               >
                 <Settings className="w-3.5 h-3.5 text-red-400" />
@@ -1467,12 +1470,12 @@ export default function App() {
             <label className="text-xs font-mono text-slate-400 uppercase tracking-wider block">
               PILIHAN KARAKTER PENYIAR & KONDEKTUR:
             </label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
               
               {/* Voice 1: Fenrir */}
               <div
                 onClick={() => setSelectedVoice('Fenrir')}
-                className={`p-3.5 rounded-xl border cursor-pointer transition-all flex flex-col justify-between gap-2 ${
+                className={`p-3 sm:p-3.5 rounded-xl border cursor-pointer transition-all flex flex-col justify-between gap-2 ${
                   selectedVoice === 'Fenrir'
                     ? 'bg-red-950/50 border-red-500 shadow-md ring-1 ring-red-500'
                     : 'bg-slate-950/80 border-slate-800 hover:border-slate-700'
@@ -1497,7 +1500,7 @@ export default function App() {
               {/* Voice 2: Puck */}
               <div
                 onClick={() => setSelectedVoice('Puck')}
-                className={`p-3.5 rounded-xl border cursor-pointer transition-all flex flex-col justify-between gap-2 ${
+                className={`p-3 sm:p-3.5 rounded-xl border cursor-pointer transition-all flex flex-col justify-between gap-2 ${
                   selectedVoice === 'Puck'
                     ? 'bg-red-950/50 border-red-500 shadow-md ring-1 ring-red-500'
                     : 'bg-slate-950/80 border-slate-800 hover:border-slate-700'
@@ -1522,7 +1525,7 @@ export default function App() {
               {/* Voice 3: Charon */}
               <div
                 onClick={() => setSelectedVoice('Charon')}
-                className={`p-3.5 rounded-xl border cursor-pointer transition-all flex flex-col justify-between gap-2 ${
+                className={`p-3 sm:p-3.5 rounded-xl border cursor-pointer transition-all flex flex-col justify-between gap-2 ${
                   selectedVoice === 'Charon'
                     ? 'bg-red-950/50 border-red-500 shadow-md ring-1 ring-red-500'
                     : 'bg-slate-950/80 border-slate-800 hover:border-slate-700'
@@ -1547,7 +1550,7 @@ export default function App() {
               {/* Voice 4: Kore */}
               <div
                 onClick={() => setSelectedVoice('Kore')}
-                className={`p-3.5 rounded-xl border cursor-pointer transition-all flex flex-col justify-between gap-2 ${
+                className={`p-3 sm:p-3.5 rounded-xl border cursor-pointer transition-all flex flex-col justify-between gap-2 ${
                   selectedVoice === 'Kore'
                     ? 'bg-red-950/50 border-red-500 shadow-md ring-1 ring-red-500'
                     : 'bg-slate-950/80 border-slate-800 hover:border-slate-700'
@@ -1573,22 +1576,22 @@ export default function App() {
           </div>
 
           {/* Bel Terminal & Volume Controls */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 pt-2">
             
             {/* Pre-Chime Ding-Dong Toggle */}
-            <div className="bg-slate-950/90 border border-slate-800/90 rounded-xl p-3.5 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
+            <div className="bg-slate-950/90 border border-slate-800/90 rounded-xl p-3 sm:p-3.5 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
                 <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
                   <BellRing className="w-4 h-4 text-amber-400" />
                 </div>
-                <div>
-                  <p className="text-xs font-bold text-white">Bel Terminal (Ding-Dong)</p>
-                  <p className="text-[11px] text-slate-400">Bunyi bel pembuka sebelum suara pengumuman</p>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-white truncate">Bel Terminal (Ding-Dong)</p>
+                  <p className="text-[11px] text-slate-400 truncate">Bunyi bel pembuka sebelum pengumuman</p>
                 </div>
               </div>
               <button
                 onClick={() => setEnableChime(!enableChime)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all shrink-0 ${
                   enableChime
                     ? 'bg-emerald-600/30 border-emerald-500 text-emerald-400 shadow-sm'
                     : 'bg-slate-800 border-slate-700 text-slate-400'
@@ -1599,13 +1602,13 @@ export default function App() {
             </div>
 
             {/* Volume Level Slider */}
-            <div className="bg-slate-950/90 border border-slate-800/90 rounded-xl p-3.5 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3 shrink-0">
+            <div className="bg-slate-950/90 border border-slate-800/90 rounded-xl p-3 sm:p-3.5 flex items-center justify-between gap-3 sm:gap-4">
+              <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
                 <div className="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center">
                   <Volume1 className="w-4 h-4 text-blue-400" />
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-white">Volume Audio Pengeras</p>
+                  <p className="text-xs font-bold text-white">Volume Audio</p>
                   <p className="text-[11px] text-slate-400">Level: {Math.round(voiceVolume * 100)}%</p>
                 </div>
               </div>
@@ -1616,7 +1619,7 @@ export default function App() {
                 step="0.05"
                 value={voiceVolume}
                 onChange={(e) => setVoiceVolume(parseFloat(e.target.value))}
-                className="flex-1 accent-red-600 cursor-pointer"
+                className="flex-1 accent-red-600 cursor-pointer min-w-0"
               />
             </div>
 
@@ -1768,19 +1771,19 @@ export default function App() {
             </div>
 
             {/* Checkpoint Quick Soundboard Grid */}
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl space-y-4 w-full max-w-full overflow-hidden">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 sm:gap-4 pb-3 border-b border-slate-800">
                 <div>
-                  <h3 className="text-base font-bold text-white flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-red-500" />
+                  <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-red-500 shrink-0" />
                     Pemberitahuan Suara Per Point Checkpoint
                   </h3>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-[11px] sm:text-xs text-slate-400 mt-0.5">
                     Klik nama point untuk langsung memutar suara manusia asli tujuan tersebut
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className={`text-xs font-semibold px-2.5 py-1 rounded-lg border ${
+                <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+                  <span className={`text-[11px] sm:text-xs font-semibold px-2.5 py-1 rounded-lg border ${
                     selectedVoice === 'Kore'
                       ? 'text-pink-400 bg-pink-950/60 border-pink-500/30'
                       : 'text-amber-400 bg-amber-950/60 border-amber-500/30'
@@ -1793,7 +1796,7 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-2.5">
                 {checkpoints.map((cp, idx) => {
                   const isCurrent = currentCheckpointIndex === idx;
                   const categoryKey = `point-${cp.id}`;
@@ -1804,24 +1807,24 @@ export default function App() {
                       onClick={() => {
                         setCurrentCheckpointIndex(idx);
                         const script = cp.id.includes('term-') || cp.id.includes('term_')
-                          ? `Perhatian seluruh penumpang. Bus STJ Viola telah tiba di ${cp.name}. Terima kasih telah bepergian bersama Sudiro Tungga Jaya Viola. Sampai jumpa di perjalanan berikutnya.`
-                          : `Perhatian seluruh penumpang. Bus STJ Viola sebentar lagi akan tiba di ${cp.name}. Bagi penumpang yang akan turun di ${cp.name}, dipersilakan mempersiapkan barang bawaan Anda. Terima kasih.`;
+                          ? `Perhatian seluruh penumpang. Bus STJ Viola telah tiba di ${cp.name}. Terima kasih telah bepergian bersama Sudiro Tungga Jaya Viola. Sampai jumpa di perjalanan berikutnya`
+                          : `Perhatian seluruh penumpang. Bus STJ Viola sebentar lagi akan tiba di ${cp.name}. Bagi penumpang yang akan turun di ${cp.name}, dipersilakan mempersiapkan barang bawaan Anda. Terima kasih`;
                         speakAnnouncement(script, categoryKey);
                       }}
-                      className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between gap-1.5 ${
+                      className={`p-2.5 sm:p-3 rounded-xl border text-left transition-all flex flex-col justify-between gap-1.5 min-w-0 w-full overflow-hidden ${
                         isCurrent
                           ? 'bg-red-950/60 border-red-500 text-white ring-1 ring-red-500'
                           : 'bg-slate-950/70 border-slate-800/80 hover:border-slate-700 hover:bg-slate-900/60 text-slate-200'
                       }`}
                     >
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between w-full">
                         <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-300">
                           #{idx + 1}
                         </span>
-                        <Volume2 className="w-3.5 h-3.5 text-red-400" />
+                        <Volume2 className="w-3.5 h-3.5 text-red-400 shrink-0" />
                       </div>
-                      <p className="text-xs font-bold line-clamp-1">{cp.name}</p>
-                      <span className="text-[10px] text-slate-400 font-mono">
+                      <p className="text-xs font-bold truncate w-full" title={cp.name}>{cp.name}</p>
+                      <span className="text-[10px] text-slate-400 font-mono truncate">
                         {cp.estTime}
                       </span>
                     </button>
@@ -1831,35 +1834,35 @@ export default function App() {
             </div>
 
             {/* Custom AI prompt box */}
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
-              <div className="flex items-center gap-2 text-white font-bold text-base sm:text-lg">
-                <Sparkles className="w-5 h-5 text-red-500" />
-                Generator Naskah Pengumuman Kustom (AI Gemini)
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl space-y-3.5 sm:space-y-4 w-full max-w-full overflow-hidden">
+              <div className="flex items-center gap-2 text-white font-bold text-sm sm:text-lg">
+                <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-red-500 shrink-0" />
+                <span>Generator Naskah Pengumuman Kustom (AI Gemini)</span>
               </div>
               <p className="text-xs text-slate-400">
                 Ketik kalimat bebas (misal: "Barang tertinggal di bagasi", "Jadwal sholat maghrib", dll.), sistem otomatis mengonversi ke suara manusia jernih.
               </p>
-              <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 w-full">
                 <input 
                   type="text" 
                   value={customPrompt}
                   onChange={(e) => setCustomPrompt(e.target.value)}
                   placeholder="Ketik pengumuman kustom kondektur..."
-                  className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-red-500"
+                  className="w-full min-w-0 flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm text-white focus:outline-none focus:border-red-500"
                 />
                 <button 
                   onClick={handleGenerateAiAnnouncement}
                   disabled={isGenerating || !customPrompt}
-                  className="px-6 py-3 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-semibold rounded-xl transition-all shadow-md shrink-0 flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto px-5 py-2.5 sm:px-6 sm:py-3 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-semibold text-xs sm:text-sm rounded-xl transition-all shadow-md shrink-0 flex items-center justify-center gap-2"
                 >
                   <Mic className="w-4 h-4" /> {isGenerating ? 'Memproses...' : 'Buat & Putar Suara'}
                 </button>
               </div>
 
               {aiScript && (
-                <div className="mt-4 p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-mono text-red-400 uppercase">Naskah Dihasilkan:</span>
+                <div className="mt-4 p-3.5 sm:p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-mono text-red-400 uppercase">Naskah Dihasilkan:</span>
                     <button 
                       onClick={() => speakAnnouncement(aiScript)}
                       disabled={isAudioLoading}
@@ -1869,7 +1872,7 @@ export default function App() {
                       <span>Putar Ulang</span>
                     </button>
                   </div>
-                  <p className="text-sm text-slate-200 italic">"{aiScript}"</p>
+                  <p className="text-xs sm:text-sm text-slate-200 italic">"{aiScript}"</p>
                 </div>
               )}
             </div>
@@ -1880,18 +1883,18 @@ export default function App() {
         {/* TAB 2: OPERASIONAL & DASHBOARD GRAFIK */}
         {activeTab === 'operations' && (
           <div className="space-y-6">
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
-              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl space-y-4 sm:space-y-6 w-full max-w-full overflow-hidden">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 sm:gap-4 pb-4 border-b border-slate-800">
                 <div>
-                  <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                    <LineChart className="w-5 h-5 text-red-500" />
-                    Dashboard Visual Kecepatan & ETA ({routeDirection === 'surabaya-magetan' ? 'Surabaya → Magetan' : 'Magetan → Surabaya'})
+                  <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
+                    <LineChart className="w-5 h-5 text-red-500 shrink-0" />
+                    <span>Dashboard Visual Kecepatan & ETA ({routeDirection === 'surabaya-magetan' ? 'Surabaya → Magetan' : 'Magetan → Surabaya'})</span>
                   </h2>
-                  <p className="text-sm text-slate-400 mt-1">
+                  <p className="text-xs sm:text-sm text-slate-400 mt-1">
                     Grafik kecepatan live real-time dan kalkulasi estimasi waktu tiba (ETA).
                   </p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto justify-between sm:justify-end">
                   <button 
                     onClick={useLiveDeviceGps}
                     className="px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 text-xs font-semibold rounded-lg border border-blue-500/30 flex items-center gap-1.5 transition-all"
@@ -1905,21 +1908,21 @@ export default function App() {
               </div>
 
               {/* Visual Speed Sparkline Chart (SVG) */}
-              <div className="bg-slate-950 border border-slate-800 rounded-2xl p-6 space-y-4">
+              <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 sm:p-6 space-y-4 w-full overflow-hidden">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-sm font-bold text-white">Grafik Riwayat Kecepatan Bus (KM/Jam)</h3>
-                    <p className="text-xs text-slate-400">Kecepatan live dari sensor satelit GPS</p>
+                    <h3 className="text-xs sm:text-sm font-bold text-white">Grafik Riwayat Kecepatan Bus (KM/Jam)</h3>
+                    <p className="text-[11px] sm:text-xs text-slate-400">Kecepatan live dari sensor satelit GPS</p>
                   </div>
                   <div className="text-right">
-                    <span className="text-2xl font-mono font-bold text-emerald-400">{gpsSpeedKmh}</span>
+                    <span className="text-xl sm:text-2xl font-mono font-bold text-emerald-400">{gpsSpeedKmh}</span>
                     <span className="text-xs text-slate-400 ml-1">KM/H</span>
                   </div>
                 </div>
 
                 {/* SVG Line Chart */}
-                <div className="h-40 w-full pt-4">
-                  <svg className="w-full h-full overflow-visible" viewBox="0 0 300 100" preserveAspectRatio="none">
+                <div className="h-36 sm:h-40 w-full pt-4">
+                  <svg className="w-full h-full overflow-hidden" viewBox="0 0 300 100" preserveAspectRatio="none">
                     <line x1="0" y1="20" x2="300" y2="20" stroke="#1e293b" strokeWidth="1" />
                     <line x1="0" y1="50" x2="300" y2="50" stroke="#1e293b" strokeWidth="1" />
                     <line x1="0" y1="80" x2="300" y2="80" stroke="#1e293b" strokeWidth="1" />
@@ -1947,10 +1950,10 @@ export default function App() {
               </div>
 
               {/* ETA & Status Summary Card */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-slate-950 border border-slate-800 rounded-xl p-5 space-y-2">
-                  <p className="text-xs font-mono text-slate-400 uppercase">STATUS RUTE & POINT SASARAN</p>
-                  <p className="text-xl font-bold text-white font-mono">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 sm:p-5 space-y-1.5">
+                  <p className="text-[10px] sm:text-xs font-mono text-slate-400 uppercase">STATUS RUTE & POINT SASARAN</p>
+                  <p className="text-lg sm:text-xl font-bold text-white font-mono truncate">
                     {routeDirection === 'surabaya-magetan' ? 'Surabaya → Magetan' : 'Magetan → Surabaya'}
                   </p>
                   <p className="text-xs text-slate-400">
@@ -1958,9 +1961,9 @@ export default function App() {
                   </p>
                 </div>
 
-                <div className="bg-slate-950 border border-slate-800 rounded-xl p-5 space-y-2">
-                  <p className="text-xs font-mono text-slate-400 uppercase">KECEPATAN & ESTIMASI TIBA (ETA)</p>
-                  <p className="text-xl font-bold text-emerald-400 font-mono">{gpsSpeedKmh} KM/Jam · {etaFinalTimeStr}</p>
+                <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 sm:p-5 space-y-1.5">
+                  <p className="text-[10px] sm:text-xs font-mono text-slate-400 uppercase">KECEPATAN & ESTIMASI TIBA (ETA)</p>
+                  <p className="text-lg sm:text-xl font-bold text-emerald-400 font-mono">{gpsSpeedKmh} KM/Jam · {etaFinalTimeStr}</p>
                   <p className="text-xs text-slate-400">
                     Estimasi tiba di tujuan akhir: ~{etaMinutesTotal} menit ({gpsSpeedKmh} KM/Jam)
                   </p>
@@ -1974,18 +1977,18 @@ export default function App() {
         {/* TAB 3: CHECKPOINTS POINT & GPS DISTANCE TRACKER */}
         {activeTab === 'checkpoints' && (
           <div className="space-y-6">
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-6 border-b border-slate-800">
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl w-full max-w-full overflow-hidden">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 sm:gap-4 pb-4 sm:pb-6 border-b border-slate-800">
                 <div>
-                  <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                    <Navigation className="w-5 h-5 text-red-500" />
-                    Titik Pemberhentian Point STJ Viola ({routeDirection === 'surabaya-magetan' ? 'Surabaya → Magetan' : 'Magetan → Surabaya'})
+                  <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
+                    <Navigation className="w-5 h-5 text-red-500 shrink-0" />
+                    <span>Titik Pemberhentian Point STJ Viola ({routeDirection === 'surabaya-magetan' ? 'Surabaya → Magetan' : 'Magetan → Surabaya'})</span>
                   </h2>
-                  <p className="text-sm text-slate-400 mt-1">
+                  <p className="text-xs sm:text-sm text-slate-400 mt-1">
                     Daftar point resmi terhubung langsung dengan satelit GPS real-time.
                   </p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
                   <button 
                     onClick={() => setAutoAdvancePoint(!autoAdvancePoint)}
                     className={`px-3 py-1.5 text-xs font-semibold rounded-lg border flex items-center gap-1.5 transition-all ${autoAdvancePoint ? 'bg-emerald-600 text-white border-emerald-500' : 'bg-slate-800 text-slate-400 border-slate-700'}`}
@@ -2001,7 +2004,7 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="mt-6 space-y-4">
+              <div className="mt-4 sm:mt-6 space-y-3 sm:space-y-4">
                 {checkpoints.map((cp, idx) => {
                   const isCurrent = currentCheckpointIndex === idx;
                   const isPassed = idx < currentCheckpointIndex;
@@ -2017,24 +2020,24 @@ export default function App() {
                           : `Perhatian seluruh penumpang. Bus STJ Viola sebentar lagi akan tiba di titik point ${cp.name}. Bagi penumpang yang akan turun, dipersilakan mempersiapkan barang bawaan Anda. Terima kasih.`;
                         speakAnnouncement(script, `point-${cp.id}`);
                       }}
-                      className={`p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-4 ${isCurrent ? 'bg-red-950/40 border-red-500/60 shadow-lg' : isPassed ? 'bg-slate-900/40 border-slate-800 opacity-60' : 'bg-slate-900 border-slate-800 hover:border-slate-700'}`}
+                      className={`p-3.5 sm:p-4 rounded-xl border transition-all cursor-pointer flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3 sm:gap-4 w-full max-w-full overflow-hidden ${isCurrent ? 'bg-red-950/40 border-red-500/60 shadow-lg' : isPassed ? 'bg-slate-900/40 border-slate-800 opacity-60' : 'bg-slate-900 border-slate-800 hover:border-slate-700'}`}
                     >
-                      <div className="flex items-center gap-4">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm shrink-0 ${isCurrent ? 'bg-red-600 text-white shadow-md' : isPassed ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-800 text-slate-400'}`}>
+                      <div className="flex items-start sm:items-center gap-3 sm:gap-4 min-w-0 flex-1">
+                        <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center font-bold text-xs sm:text-sm shrink-0 ${isCurrent ? 'bg-red-600 text-white shadow-md' : isPassed ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-800 text-slate-400'}`}>
                           {idx + 1}
                         </div>
-                        <div>
+                        <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className="font-bold text-white text-base">{cp.name}</h3>
-                            {isCurrent && <span className="text-[10px] px-2 py-0.5 rounded bg-red-600 text-white font-mono uppercase">Point Sasaran</span>}
+                            <h3 className="font-bold text-white text-sm sm:text-base truncate">{cp.name}</h3>
+                            {isCurrent && <span className="text-[9px] sm:text-[10px] px-2 py-0.5 rounded bg-red-600 text-white font-mono uppercase shrink-0">Point Sasaran</span>}
                           </div>
-                          <p className="text-xs text-slate-400 mt-0.5">{cp.description}</p>
-                          <p className="text-[11px] font-mono text-slate-500 mt-0.5">Koordinat: {cp.lat.toFixed(4)}, {cp.lng.toFixed(4)}</p>
+                          <p className="text-xs text-slate-400 mt-0.5 line-clamp-1">{cp.description}</p>
+                          <p className="text-[10px] sm:text-[11px] font-mono text-slate-500 mt-0.5 truncate">Koordinat: {cp.lat.toFixed(4)}, {cp.lng.toFixed(4)}</p>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-3 shrink-0" onClick={(e) => e.stopPropagation()}>
-                        <div className="text-right">
+                      <div className="flex flex-wrap items-center justify-between lg:justify-end gap-2 w-full lg:w-auto pt-2.5 lg:pt-0 border-t border-slate-800/80 lg:border-t-0 shrink-0" onClick={(e) => e.stopPropagation()}>
+                        <div className="text-left lg:text-right">
                           <p className={`text-xs font-mono font-bold ${isCurrent ? 'text-red-400' : isPassed ? 'text-emerald-400' : 'text-slate-400'}`}>
                             {isPassed ? 'Sudah Dilewati' : isCurrent ? 'Point Sasaran' : 'Point Berikutnya'}
                           </p>
@@ -2047,38 +2050,42 @@ export default function App() {
                                 const newTime = e.target.value;
                                 setCheckpoints(prev => prev.map((item, i) => i === idx ? { ...item, estTime: newTime } : item));
                               }}
-                              className="w-24 bg-slate-950 border border-slate-700 rounded px-2 py-0.5 text-xs font-mono text-amber-400 text-center focus:outline-none focus:border-red-500"
+                              className="w-20 sm:w-24 bg-slate-950 border border-slate-700 rounded px-2 py-0.5 text-xs font-mono text-amber-400 text-center focus:outline-none focus:border-red-500"
                               title="Klik untuk mengubah jadwal tiba manual"
                             />
                           </div>
                         </div>
                         
-                        <a
-                          href={`https://www.google.com/maps/search/?api=1&query=${cp.lat},${cp.lng}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="px-3 py-2 bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white text-xs font-semibold rounded-lg border border-emerald-500/30 transition-all flex items-center gap-1.5 shadow-sm"
-                          title="Buka lokasi titik ini di Google Maps"
-                        >
-                          <ExternalLink className="w-3.5 h-3.5" />
-                          <span className="hidden md:inline">Google Maps</span>
-                        </a>
+                        <div className="flex items-center gap-2">
+                          <a
+                            href={`https://www.google.com/maps/search/?api=1&query=${cp.lat},${cp.lng}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="px-2.5 py-1.5 sm:px-3 sm:py-2 bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white text-xs font-semibold rounded-lg border border-emerald-500/30 transition-all flex items-center gap-1.5 shadow-sm"
+                            title="Buka lokasi titik ini di Google Maps"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">Google Maps</span>
+                          </a>
 
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setAutoAdvancePoint(false);
-                            setCurrentCheckpointIndex(idx);
-                            const script = `Perhatian seluruh penumpang. Bus STJ Viola sebentar lagi akan tiba di titik pemberhentian point ${cp.name}. Bagi penumpang yang akan turun, dipersilakan mempersiapkan barang bawaan agar tidak tertinggal. Terima kasih.`;
-                            speakAnnouncement(script, `point-${cp.id}`);
-                          }}
-                          disabled={isAudioLoading}
-                          className="px-3.5 py-2 bg-red-600/20 hover:bg-red-600 disabled:opacity-50 text-red-400 hover:text-white text-xs font-semibold rounded-lg border border-red-500/30 transition-all flex items-center gap-1.5"
-                        >
-                          <Volume2 className="w-4 h-4" />
-                          <span>Suara Point</span>
-                        </button>
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setAutoAdvancePoint(false);
+                              setCurrentCheckpointIndex(idx);
+                              const script = cp.id.includes('term-') || cp.id.includes('term_')
+                                ? `Perhatian seluruh penumpang. Bus STJ Viola telah tiba di ${cp.name}. Terima kasih telah bepergian bersama Sudiro Tungga Jaya Viola. Sampai jumpa di perjalanan berikutnya`
+                                : `Perhatian seluruh penumpang. Bus STJ Viola sebentar lagi akan tiba di titik point ${cp.name}. Bagi penumpang yang akan turun, dipersilakan mempersiapkan barang bawaan agar tidak tertinggal. Terima kasih`;
+                              speakAnnouncement(script, `point-${cp.id}`);
+                            }}
+                            disabled={isAudioLoading}
+                            className="px-3 py-1.5 sm:px-3.5 sm:py-2 bg-red-600/20 hover:bg-red-600 disabled:opacity-50 text-red-400 hover:text-white text-xs font-semibold rounded-lg border border-red-500/30 transition-all flex items-center gap-1.5"
+                          >
+                            <Volume2 className="w-3.5 h-3.5" />
+                            <span>Suara Point</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );
@@ -2091,20 +2098,20 @@ export default function App() {
         {/* TAB 4: MANIFEST (2-3) */}
         {activeTab === 'manifest' && (
           <div className="space-y-6">
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-6 border-b border-slate-800">
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl w-full max-w-full overflow-hidden">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 sm:gap-4 pb-4 sm:pb-6 border-b border-slate-800">
                 <div>
-                  <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                    <Users className="w-5 h-5 text-red-500" />
-                    Manifest Kursi Viola Ekonomi (Konfigurasi 2-3)
+                  <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
+                    <Users className="w-5 h-5 text-red-500 shrink-0" />
+                    <span>Manifest Kursi Viola Ekonomi (Konfigurasi 2-3)</span>
                   </h2>
-                  <p className="text-sm text-slate-400 mt-1">Sisi Kiri: 2 Kursi (A, B) | Sisi Kanan: 3 Kursi (C, D, E)</p>
+                  <p className="text-xs sm:text-sm text-slate-400 mt-1">Sisi Kiri: 2 Kursi (A, B) | Sisi Kanan: 3 Kursi (C, D, E)</p>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
                   <button 
                     onClick={exportManifestCSV}
-                    className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition-all shadow-md"
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition-all shadow-md"
                   >
                     <Download className="w-4 h-4" /> Unduh Manifest (CSV)
                   </button>
@@ -2112,18 +2119,18 @@ export default function App() {
               </div>
 
               {/* Add Passenger Form */}
-              <form onSubmit={handleAddPassenger} className="mt-6 p-4 bg-slate-950 border border-slate-800 rounded-xl flex flex-wrap items-center gap-3">
+              <form onSubmit={handleAddPassenger} className="mt-4 sm:mt-6 p-3.5 sm:p-4 bg-slate-950 border border-slate-800 rounded-xl flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 w-full">
                 <input 
                   type="text" 
                   placeholder="Nama Penumpang"
                   value={newPassengerName}
                   onChange={(e) => setNewPassengerName(e.target.value)}
-                  className="flex-1 min-w-[200px] bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500"
+                  className="flex-1 w-full min-w-0 bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500"
                 />
                 <select 
                   value={newPassengerSeat}
                   onChange={(e) => setNewPassengerSeat(e.target.value)}
-                  className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500"
+                  className="w-full sm:w-auto bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500"
                 >
                   <option value="2A">Kursi 2A (Kiri)</option>
                   <option value="2B">Kursi 2B (Kiri)</option>
@@ -2136,34 +2143,34 @@ export default function App() {
                   <option value="3D">Kursi 3D (Kanan)</option>
                   <option value="3E">Kursi 3E (Kanan)</option>
                 </select>
-                <button type="submit" className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white text-xs font-semibold rounded-xl transition-all shrink-0">
+                <button type="submit" className="w-full sm:w-auto px-4 py-2 bg-red-600 hover:bg-red-500 text-white text-xs font-semibold rounded-xl transition-all shrink-0">
                   + Tambah Penumpang
                 </button>
               </form>
 
               {/* Passenger Table */}
-              <div className="mt-6 overflow-x-auto">
-                <table className="w-full text-left border-collapse">
+              <div className="mt-4 sm:mt-6 overflow-x-auto w-full max-w-full rounded-xl border border-slate-800">
+                <table className="w-full min-w-[540px] text-left border-collapse">
                   <thead>
-                    <tr className="border-b border-slate-800 text-xs font-mono text-slate-400">
-                      <th className="py-3 px-4">KURSI (2-3)</th>
-                      <th className="py-3 px-4">NO TIKET</th>
-                      <th className="py-3 px-4">NAMA PENUMPANG</th>
-                      <th className="py-3 px-4">PEMBERHENTIAN TUJUAN</th>
-                      <th className="py-3 px-4 text-center">STATUS</th>
+                    <tr className="border-b border-slate-800 text-xs font-mono text-slate-400 bg-slate-950/60">
+                      <th className="py-3 px-3 sm:px-4">KURSI (2-3)</th>
+                      <th className="py-3 px-3 sm:px-4">NO TIKET</th>
+                      <th className="py-3 px-3 sm:px-4">NAMA PENUMPANG</th>
+                      <th className="py-3 px-3 sm:px-4">PEMBERHENTIAN TUJUAN</th>
+                      <th className="py-3 px-3 sm:px-4 text-center">STATUS</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800 text-sm">
+                  <tbody className="divide-y divide-slate-800 text-xs sm:text-sm">
                     {passengers.map(p => (
                       <tr key={p.id} className="hover:bg-slate-800/50 transition-colors">
-                        <td className="py-3.5 px-4 font-mono font-bold text-red-400">{p.seat}</td>
-                        <td className="py-3.5 px-4 font-mono text-slate-300">{p.ticketNo}</td>
-                        <td className="py-3.5 px-4 font-semibold text-white">{p.name}</td>
-                        <td className="py-3.5 px-4 text-slate-300">{p.destination}</td>
-                        <td className="py-3.5 px-4 text-center">
+                        <td className="py-3 px-3 sm:px-4 font-mono font-bold text-red-400">{p.seat}</td>
+                        <td className="py-3 px-3 sm:px-4 font-mono text-slate-300">{p.ticketNo}</td>
+                        <td className="py-3 px-3 sm:px-4 font-semibold text-white">{p.name}</td>
+                        <td className="py-3 px-3 sm:px-4 text-slate-300">{p.destination}</td>
+                        <td className="py-3 px-3 sm:px-4 text-center">
                           <button 
                             onClick={() => toggleCheckIn(p.id)}
-                            className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${p.checkedIn ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}
+                            className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all whitespace-nowrap ${p.checkedIn ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}
                           >
                             {p.checkedIn ? 'Sudah Bayar / Naik' : 'Belum'}
                           </button>
@@ -2180,31 +2187,31 @@ export default function App() {
         {/* TAB 5: MAPS */}
         {activeTab === 'map' && (
           <div className="space-y-6">
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-5">
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl space-y-4 sm:space-y-5 w-full max-w-full overflow-hidden">
               
               {/* Header with Title and Action Buttons */}
-              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 sm:gap-4 pb-4 border-b border-slate-800">
                 <div>
-                  <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                    <MapIcon className="w-5 h-5 text-blue-500" />
-                    Google Maps Rute Navigasi STJ Viola
+                  <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
+                    <MapIcon className="w-5 h-5 text-blue-500 shrink-0" />
+                    <span>Google Maps Rute Navigasi STJ Viola</span>
                   </h2>
-                  <p className="text-sm text-slate-400 mt-1">
+                  <p className="text-xs sm:text-sm text-slate-400 mt-1">
                     {isSbyToMg 
-                      ? 'Rute Keberangkatan Awal: Terminal Purabaya Bungurasih (Waru) → Tujuan Akhir: Terminal Magetan' 
-                      : 'Rute Keberangkatan Awal: Terminal Magetan → Tujuan Akhir: Terminal Purabaya Bungurasih (Waru)'}
+                      ? 'Keberangkatan Awal: Terminal Purabaya Bungurasih (Waru) → Tujuan Akhir: Terminal Magetan' 
+                      : 'Keberangkatan Awal: Terminal Magetan → Tujuan Akhir: Terminal Purabaya Bungurasih (Waru)'}
                   </p>
                 </div>
                 
-                <div className="flex flex-wrap items-center gap-2.5">
+                <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                   <button 
                     onClick={() => {
                       setRouteDirection(isSbyToMg ? 'magetan-surabaya' : 'surabaya-magetan');
                     }}
-                    className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold rounded-xl flex items-center gap-2 transition-all shadow-sm"
+                    className="flex-1 sm:flex-initial px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all shadow-sm"
                     title="Tukar arah rute keberangkatan awal dan tujuan akhir"
                   >
-                    <ArrowRightLeft className="w-4 h-4 text-red-400" />
+                    <ArrowRightLeft className="w-4 h-4 text-red-400 shrink-0" />
                     <span>Tukar Arah ({isSbyToMg ? 'Magetan → SBY' : 'SBY → Magetan'})</span>
                   </button>
 
@@ -2212,38 +2219,38 @@ export default function App() {
                     href={googleMapsExternalUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl transition-all shadow-md flex items-center gap-1.5 whitespace-nowrap"
+                    className="flex-1 sm:flex-initial px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl transition-all shadow-md flex items-center justify-center gap-1.5 whitespace-nowrap"
                   >
-                    <span>Buka Rute di Google Maps ↗</span>
+                    <span>Buka Google Maps ↗</span>
                   </a>
                 </div>
               </div>
 
               {/* Origin & Destination Route Summary Badges */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-4 bg-slate-950/80 border border-slate-800 rounded-2xl">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold text-xs shrink-0 font-mono">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 sm:p-4 bg-slate-950/80 border border-slate-800 rounded-2xl">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold text-xs shrink-0 font-mono">
                     AWAL
                   </div>
-                  <div>
-                    <p className="text-[10px] font-mono text-emerald-400 uppercase tracking-wider font-semibold">
+                  <div className="min-w-0">
+                    <p className="text-[9px] sm:text-[10px] font-mono text-emerald-400 uppercase tracking-wider font-semibold">
                       Titik Keberangkatan Awal
                     </p>
-                    <p className="text-sm font-bold text-white">
+                    <p className="text-xs sm:text-sm font-bold text-white truncate">
                       {originName}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-red-600/20 text-red-400 border border-red-500/30 flex items-center justify-center font-bold text-xs shrink-0 font-mono">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-red-600/20 text-red-400 border border-red-500/30 flex items-center justify-center font-bold text-xs shrink-0 font-mono">
                     AKHIR
                   </div>
-                  <div>
-                    <p className="text-[10px] font-mono text-red-400 uppercase tracking-wider font-semibold">
+                  <div className="min-w-0">
+                    <p className="text-[9px] sm:text-[10px] font-mono text-red-400 uppercase tracking-wider font-semibold">
                       Titik Tujuan Akhir
                     </p>
-                    <p className="text-sm font-bold text-white">
+                    <p className="text-xs sm:text-sm font-bold text-white truncate">
                       {destinationName}
                     </p>
                   </div>
@@ -2253,8 +2260,8 @@ export default function App() {
               {/* Checkpoint Quick Location Search */}
               <div className="space-y-2">
                 <p className="text-xs font-semibold text-slate-400 flex items-center gap-1.5">
-                  <MapPin className="w-3.5 h-3.5 text-red-500" />
-                  Titik Point di Sepanjang Rute Ini:
+                  <MapPin className="w-3.5 h-3.5 text-red-500 shrink-0" />
+                  <span>Titik Point di Sepanjang Rute Ini:</span>
                 </p>
                 <div className="flex flex-wrap gap-1.5">
                   {checkpoints.map((cp, idx) => (
@@ -2263,7 +2270,7 @@ export default function App() {
                       href={`https://www.google.com/maps/search/?api=1&query=${cp.lat},${cp.lng}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="px-2.5 py-1 rounded-lg bg-slate-950 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 text-xs font-mono transition-all flex items-center gap-1"
+                      className="px-2.5 py-1 rounded-lg bg-slate-950 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 text-[11px] sm:text-xs font-mono transition-all flex items-center gap-1 shrink-0"
                       title={`Buka ${cp.name} di Google Maps`}
                     >
                       <span className="text-slate-500 font-bold">#{idx + 1}</span>
@@ -2274,7 +2281,7 @@ export default function App() {
               </div>
 
               {/* Interactive Google Maps Direction Iframe */}
-              <div className="w-full h-[520px] rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 shadow-inner relative">
+              <div className="w-full h-[360px] sm:h-[520px] rounded-xl sm:rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 shadow-inner relative">
                 <iframe 
                   title={`Google Maps Rute STJ Viola: ${originName} ke ${destinationName}`}
                   src={googleMapsEmbedUrl}
@@ -2293,42 +2300,43 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <footer className="py-6 text-center text-xs text-slate-500 border-t border-slate-800/80 bg-slate-900/50 mt-auto">
-        <p>© 2026 Kondektur Digital STJ Viola Ekonomi · Rute Surabaya ⇄ Magetan.</p>
+      <footer className="py-4 sm:py-6 text-center text-[11px] sm:text-xs text-slate-500 border-t border-slate-800/80 bg-slate-900/50 mt-auto px-4 flex flex-col items-center justify-center gap-2">
+        <img src={stjLogo} alt="Logo PO Sudiro Tungga Jaya Resmi" className="w-8 h-8 rounded-full border border-red-500/40 object-cover shadow-sm" />
+        <p>© 2026 PO Sudiro Tungga Jaya (STJ Viola Ekonomi) · Kondektur Digital & Satelit GPS Realtime.</p>
       </footer>
 
       {/* Modal: Pengaturan Suara & Deploy GitHub Pages */}
       {showVoiceSettingsModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl p-6 space-y-6 text-slate-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl p-4 sm:p-6 space-y-4 sm:space-y-6 text-slate-200">
             
             {/* Modal Header */}
-            <div className="flex items-start justify-between pb-4 border-b border-slate-800">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-red-600/20 text-red-400 border border-red-500/30 flex items-center justify-center shrink-0">
-                  <Headphones className="w-5 h-5 text-red-400" />
+            <div className="flex items-start justify-between pb-3 sm:pb-4 border-b border-slate-800">
+              <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-950 border border-red-500/40 p-0.5 flex items-center justify-center shrink-0 shadow-md shadow-red-900/40 overflow-hidden">
+                  <img src={stjLogo} alt="Logo STJ Resmi" className="w-full h-full object-cover rounded-lg" />
                 </div>
-                <div>
-                  <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <div className="min-w-0">
+                  <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2 truncate">
                     Pengaturan Suara Manusia & GitHub Pages
                   </h3>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-[11px] sm:text-xs text-slate-400 truncate">
                     Solusi anti-suara robot untuk aplikasi STJ Viola saat di-hosting statis
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setShowVoiceSettingsModal(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all shrink-0"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Status Aktif Saat Ini */}
-            <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-mono text-slate-400 uppercase tracking-wider">
+            <div className="p-3.5 sm:p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                <span className="text-[10px] sm:text-xs font-mono text-slate-400 uppercase tracking-wider">
                   STATUS AUDIO SAAT INI:
                 </span>
                 <span className="px-2.5 py-1 rounded-full bg-emerald-950 border border-emerald-500/40 text-emerald-400 text-xs font-mono font-bold flex items-center gap-1.5">
@@ -2342,9 +2350,9 @@ export default function App() {
             </div>
 
             {/* Bagian 1: Kunci API Gemini untuk GitHub Pages */}
-            <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-3">
-              <div className="flex items-center gap-2 text-white font-bold text-sm">
-                <Key className="w-4 h-4 text-amber-400" />
+            <div className="p-3.5 sm:p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-3">
+              <div className="flex items-center gap-2 text-white font-bold text-xs sm:text-sm">
+                <Key className="w-4 h-4 text-amber-400 shrink-0" />
                 <span>Kunci API Google Gemini (Opsional untuk GitHub Pages)</span>
               </div>
               <p className="text-xs text-slate-400 leading-relaxed">
@@ -2352,29 +2360,31 @@ export default function App() {
               </p>
               
               <div className="space-y-2 pt-1">
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <input
                     type="password"
                     placeholder="Masukkan Gemini API Key (AIzaSy...)"
                     value={apiKeyInput}
                     onChange={(e) => setApiKeyInput(e.target.value)}
-                    className="flex-1 px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-red-500 font-mono"
+                    className="flex-1 w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-red-500 font-mono"
                   />
-                  <button
-                    onClick={handleSaveApiKey}
-                    className="px-4 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-xl transition-all shadow-md shrink-0 flex items-center gap-1.5"
-                  >
-                    <Check className="w-4 h-4" /> Simpan
-                  </button>
-                  {clientApiKey && (
+                  <div className="flex items-center gap-2">
                     <button
-                      onClick={handleClearApiKey}
-                      className="px-3 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-xl transition-all"
-                      title="Hapus Kunci API dari browser"
+                      onClick={handleSaveApiKey}
+                      className="flex-1 sm:flex-none px-4 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-xl transition-all shadow-md flex items-center justify-center gap-1.5"
                     >
-                      Hapus
+                      <Check className="w-4 h-4" /> Simpan
                     </button>
-                  )}
+                    {clientApiKey && (
+                      <button
+                        onClick={handleClearApiKey}
+                        className="px-3 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-xl transition-all"
+                        title="Hapus Kunci API dari browser"
+                      >
+                        Hapus
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {apiKeySaveMsg && (
@@ -2383,7 +2393,7 @@ export default function App() {
                   </p>
                 )}
 
-                <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1 text-[11px] text-slate-500 pt-1">
                   <span>Tersimpan aman di localStorage browser perangkat Anda.</span>
                   <a
                     href="https://aistudio.google.com/apikey"
