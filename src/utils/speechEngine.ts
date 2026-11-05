@@ -1,61 +1,34 @@
 /**
  * Speech Engine Utility for STJ Viola Kondektur Digital
- * Provides multi-tier speech synthesis:
- * Tier 1: Bundled Studio WAV Audio files (GitHub Pages static ready, 0ms latency)
+ * Provides multi-tier speech synthesis for 1 Normal Adult Male Voice:
+ * Tier 1: Bundled Studio MP3 Audio files (Natural 24kHz adult male speech)
  * Tier 2: Backend Express server (/api/synthesize-speech)
- * Tier 3: Client-side Gemini 3.8 Flash Lite TTS direct API call (for GitHub Pages static deployment with API key)
- * Tier 4: Calibrated Indonesian Neural Browser Speech Synthesis (zero-robotics fallback)
+ * Tier 3: Client-side Gemini 3.8 Flash Lite TTS direct API call (for GitHub Pages static deployment)
+ * Tier 4: Calibrated Indonesian Neural Browser Speech Synthesis (adult male fallback)
  */
 
 export interface VoiceOption {
-  id: 'Fenrir' | 'Puck' | 'Charon' | 'Kore';
+  id: 'Fenrir';
   name: string;
   role: string;
   description: string;
-  gender: 'male' | 'female';
+  gender: 'male';
   tone: string;
 }
 
 export const GEMINI_VOICES: VoiceOption[] = [
   {
     id: 'Fenrir',
-    name: 'Mas Fenrir',
-    role: 'Penyiar Utama STJ',
-    description: 'Suara pria berwibawa, menawan, dan hangat khas penyiar resmi PO Sudiro Tungga Jaya.',
+    name: 'Mas Jully',
+    role: 'Kondektur & Penyiar Utama STJ',
+    description: 'Suara manusia pria dewasa normal, jernih, berwibawa, dan ramah khas kondektur resmi PO Sudiro Tungga Jaya.',
     gender: 'male',
-    tone: 'Berwibawa & Hangat'
-  },
-  {
-    id: 'Puck',
-    name: 'Mas Puck',
-    role: 'Kondektur Ramah',
-    description: 'Suara pria ramah, bersahabat, santai, dan akrab dengan seluruh penumpang bus.',
-    gender: 'male',
-    tone: 'Ramah & Energik'
-  },
-  {
-    id: 'Charon',
-    name: 'Mas Charon',
-    role: 'Penyiar Eksekutif',
-    description: 'Suara pria dewasa dengan nada bass mantap, tenang, dan elegan.',
-    gender: 'male',
-    tone: 'Tenang & Dewasa'
-  },
-  {
-    id: 'Kore',
-    name: 'Mbak Kore',
-    role: 'Penyiar Terminal',
-    description: 'Suara wanita penyiar stasiun bus yang merdu, lembut, anggun, dan sopan.',
-    gender: 'female',
-    tone: 'Merdu & Anggun'
+    tone: 'Pria Dewasa Normal'
   }
 ];
 
 export const VOICE_STYLES: Record<string, string> = {
-  Fenrir: 'Natural, warm, authoritative Indonesian male bus conductor and terminal announcer with clear diction and friendly tone',
-  Puck: 'Friendly, energetic, clear Indonesian male bus announcer with warm intonation',
-  Charon: 'Deep, mature, calm Indonesian male executive coach announcer with gentle cadence',
-  Kore: 'Gentle, clear, polite Indonesian female terminal announcer with articulate Indonesian pronunciation',
+  Fenrir: 'Energetic, engaging, professional Indonesian adult male TV presenter announcer with articulate diction, charismatic tone, and high-energy projection',
 };
 
 /**
@@ -103,12 +76,12 @@ export function formatIndonesianTextForSpeech(rawText: string): string {
 }
 
 /**
- * Find the highest-quality Indonesian neural or natural voice available on the client device
+ * Find the highest-quality Indonesian adult male voice available on the client device
  */
 export function getBestIndonesianVoice(
   voices: SpeechSynthesisVoice[],
   preferredUri?: string,
-  preferMale: boolean = true
+  _preferMale: boolean = true
 ): SpeechSynthesisVoice | null {
   if (!voices || voices.length === 0) return null;
 
@@ -125,106 +98,55 @@ export function getBestIndonesianVoice(
     return voices.find(v => v.default) || voices[0] || null;
   }
 
-  if (preferMale) {
-    // Prefer male Indonesian voices (Ardi, Darma, Indra, Budi, or names containing 'male'/'pria'/'laki')
-    const maleVoice = indonesianVoices.find(v => {
-      const name = v.name.toLowerCase();
-      return name.includes('male') || name.includes('pria') || name.includes('ardi') || name.includes('darma') || name.includes('indra') || name.includes('budi');
-    });
-    if (maleVoice) return maleVoice;
+  // Always search for male Indonesian voices
+  const maleVoice = indonesianVoices.find(v => {
+    const name = v.name.toLowerCase();
+    return name.includes('male') || name.includes('pria') || name.includes('ardi') || name.includes('darma') || name.includes('indra') || name.includes('budi');
+  });
+  if (maleVoice) return maleVoice;
 
-    // Google Indonesian neural voice or default
-    const googleId = indonesianVoices.find(v => v.name.toLowerCase().includes('google'));
-    if (googleId) return googleId;
-  } else {
-    // Prefer female Indonesian voices (Gadis, Putri, Siti, or names containing 'female'/'wanita')
-    const femaleVoice = indonesianVoices.find(v => {
-      const name = v.name.toLowerCase();
-      return name.includes('female') || name.includes('wanita') || name.includes('gadis') || name.includes('putri') || name.includes('siti');
-    });
-    if (femaleVoice) return femaleVoice;
-
-    const googleId = indonesianVoices.find(v => v.name.toLowerCase().includes('google'));
-    if (googleId) return googleId;
-  }
+  const googleId = indonesianVoices.find(v => v.name.toLowerCase().includes('google'));
+  if (googleId) return googleId;
 
   return indonesianVoices[0] || voices[0] || null;
 }
 
-/**
- * Call Gemini 3.8 Flash Lite TTS directly from client-side browser
- * (Allows full 24kHz Studio Human Voice when deployed statically to GitHub Pages!)
- */
-export async function synthesizeWithGeminiClientDirect(
+import { ElevenLabsClient } from 'elevenlabs';
+
+// ... (keep VoiceOption, GEMINI_VOICES, formatIndonesianTextForSpeech, getBestIndonesianVoice as is, but adapt synthesizeWithElevenLabs)
+
+export const ELEVENLABS_VOICE_ID = 'pNInz6obpgDQGcFmaJgB'; // Adam
+
+export async function synthesizeWithElevenLabs(
   text: string,
-  voiceName: string = 'Fenrir',
   apiKey: string
 ): Promise<string> {
   if (!apiKey || !apiKey.trim()) {
-    throw new Error('Kunci API Gemini belum diatur.');
+    throw new Error('Kunci API ElevenLabs belum diatur.');
   }
 
-  const cleanKey = apiKey.trim();
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash-lite-tts:generateContent?key=${cleanKey}`;
-  const style = VOICE_STYLES[voiceName] || VOICE_STYLES.Fenrir;
+  const client = new ElevenLabsClient({ apiKey: apiKey.trim() });
+  
+  try {
+    const audioStream = await client.textToSpeech.convert(ELEVENLABS_VOICE_ID, {
+      text: text,
+      model_id: 'eleven_multilingual_v2',
+      output_format: 'mp3_44100_128',
+    });
 
-  const payload = {
-    contents: [
-      {
-        role: 'user',
-        parts: [
-          {
-            text: text,
-            speechMetadata: {
-              style: style,
-            },
-          },
-        ],
-      },
-    ],
-    generationConfig: {
-      responseModalities: ['AUDIO'],
-      speechConfig: {
-        voiceConfig: {
-          prebuiltVoiceConfig: {
-            voiceName: voiceName,
-          },
-        },
-      },
-    },
-  };
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
-    const errorBody = await response.text();
-    let errorMsg = `Gemini API Error (${response.status})`;
-    try {
-      const parsed = JSON.parse(errorBody);
-      if (parsed?.error?.message) {
-        errorMsg = parsed.error.message;
-      }
-    } catch {
-      // ignore
+    const chunks = [];
+    for await (const chunk of audioStream) {
+      chunks.push(chunk);
     }
-    throw new Error(errorMsg);
+    const buffer = Buffer.concat(chunks);
+    return buffer.toString('base64');
+  } catch (error) {
+    console.error('ElevenLabs TTS Error:', error);
+    throw new Error('Gagal memproses suara dengan ElevenLabs.');
   }
-
-  const data = await response.json();
-  const base64Audio = data?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-
-  if (!base64Audio) {
-    throw new Error('Tidak ada data audio dari respon Gemini TTS.');
-  }
-
-  return base64Audio;
 }
+// ... (rest of the file helpers)
+
 
 /**
  * Storage helpers for user Gemini API key

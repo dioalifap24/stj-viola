@@ -142,30 +142,20 @@ app.post('/api/synthesize-speech', async (req, res) => {
       mimeType: 'audio/wav',
     });
   } catch (error: any) {
-    console.warn('Gemini TTS Error:', error?.message || error);
-    // Only fall back to Google TTS if the requested voice is female (Kore)
-    // For male voices (Fenrir, Puck, Charon), never send female audio!
-    if (voiceName === 'Kore') {
-      try {
-        const getAudioFn = (googleTTS as any).getAllAudioBase64 || (googleTTS as any).default?.getAllAudioBase64;
-        if (getAudioFn) {
-          const chunks = await getAudioFn(text, {
-            lang: 'id',
-            slow: false,
-            timeout: 10000,
-          });
-          const buffers = chunks.map((c: any) => Buffer.from(c.base64, 'base64'));
-          const combined = Buffer.concat(buffers);
-          return res.json({
-            audioBase64: combined.toString('base64'),
-            mimeType: 'audio/mp3',
-          });
-        }
-      } catch (fallbackErr: any) {
-        console.error('Google TTS fallback also failed:', fallbackErr?.message || fallbackErr);
-      }
+    const errorStr = typeof error === 'string' ? error : (error?.message || JSON.stringify(error || {}));
+    const isQuotaError = errorStr.includes('429') || errorStr.includes('RESOURCE_EXHAUSTED') || errorStr.includes('quota');
+    
+    if (isQuotaError) {
+      console.log('[Speech Engine] Quota Gemini TTS tercapai (Free Tier). Mengalihkan otomatis ke Suara Browser Terkalibrasi.');
+    } else {
+      console.log('[Speech Engine] Gemini TTS tidak tersedia, mengalihkan ke mode suara browser.');
     }
-    res.status(500).json({ error: 'Gagal memproses suara: ' + (error?.message || error) });
+
+    // Return graceful fallback response so client uses calibrated browser speech synthesis without throwing 500 errors
+    return res.json({
+      fallbackToBrowser: true,
+      message: 'Menggunakan Suara Manusia Browser Terkalibrasi (Bebas Batas Kuota)',
+    });
   }
 });
 

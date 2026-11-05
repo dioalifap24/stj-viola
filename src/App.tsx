@@ -13,7 +13,7 @@ import {
 import { 
   formatIndonesianTextForSpeech, 
   getBestIndonesianVoice, 
-  synthesizeWithGeminiClientDirect, 
+  synthesizeWithElevenLabs, 
   getStoredGeminiApiKey, 
   saveStoredGeminiApiKey, 
   getStoredVoiceUri, 
@@ -465,39 +465,51 @@ export default function App() {
     } catch {}
   };
 
-  // Play Pre-announcement Chime ("Ding-Dong" tone like luxury executive bus / terminal)
+  // Play Pre-announcement Chime (3-Tone Railway Station Chime)
   const playPreAnnouncementChime = (): Promise<void> => {
     return new Promise((resolve) => {
       try {
         const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
         
-        // Tone 1: F5 (698.46 Hz)
+        // Tone 1: Bb4 (466.16 Hz)
         const osc1 = audioCtx.createOscillator();
         const gain1 = audioCtx.createGain();
         osc1.type = 'sine';
-        osc1.frequency.setValueAtTime(698.46, audioCtx.currentTime);
+        osc1.frequency.setValueAtTime(466.16, audioCtx.currentTime);
         gain1.gain.setValueAtTime(0.25 * voiceVolume, audioCtx.currentTime);
-        gain1.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
+        gain1.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
         osc1.connect(gain1);
         gain1.connect(audioCtx.destination);
         osc1.start(audioCtx.currentTime);
-        osc1.stop(audioCtx.currentTime + 0.35);
+        osc1.stop(audioCtx.currentTime + 0.4);
 
-        // Tone 2: A5 (880 Hz) - pleasant melodic harmony
+        // Tone 2: D5 (587.33 Hz)
         const osc2 = audioCtx.createOscillator();
         const gain2 = audioCtx.createGain();
         osc2.type = 'sine';
-        osc2.frequency.setValueAtTime(880, audioCtx.currentTime + 0.2);
-        gain2.gain.setValueAtTime(0.28 * voiceVolume, audioCtx.currentTime + 0.2);
-        gain2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.65);
+        osc2.frequency.setValueAtTime(587.33, audioCtx.currentTime + 0.3);
+        gain2.gain.setValueAtTime(0.25 * voiceVolume, audioCtx.currentTime + 0.3);
+        gain2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.7);
         osc2.connect(gain2);
         gain2.connect(audioCtx.destination);
-        osc2.start(audioCtx.currentTime + 0.2);
-        osc2.stop(audioCtx.currentTime + 0.65);
+        osc2.start(audioCtx.currentTime + 0.3);
+        osc2.stop(audioCtx.currentTime + 0.7);
+
+        // Tone 3: F5 (698.46 Hz)
+        const osc3 = audioCtx.createOscillator();
+        const gain3 = audioCtx.createGain();
+        osc3.type = 'sine';
+        osc3.frequency.setValueAtTime(698.46, audioCtx.currentTime + 0.6);
+        gain3.gain.setValueAtTime(0.25 * voiceVolume, audioCtx.currentTime + 0.6);
+        gain3.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.0);
+        osc3.connect(gain3);
+        gain3.connect(audioCtx.destination);
+        osc3.start(audioCtx.currentTime + 0.6);
+        osc3.stop(audioCtx.currentTime + 1.0);
 
         setTimeout(() => {
           resolve();
-        }, 550);
+        }, 1100);
       } catch {
         resolve();
       }
@@ -545,25 +557,17 @@ export default function App() {
     };
 
     let staticAudioPath: string | null = null;
-    const voiceKey = selectedVoice.toLowerCase(); // 'fenrir' | 'puck' | 'charon' | 'kore'
 
     if (category) {
       if (category.startsWith('point-')) {
         // Individual Checkpoint: point-exit-dumpil, point-term-madiun, etc.
         const cleanCpId = category.replace('point-', '').replace(/-/g, '_');
-        // Check for persona-specific recording (e.g. point_exit_dumpil_puck.mp3)
-        // or default (point_exit_dumpil.mp3 which is Fenrir male voice)
-        if (selectedVoice === 'Fenrir') {
-          staticAudioPath = resolveAudioUrl(`point_${cleanCpId}.mp3`);
-        } else {
-          staticAudioPath = resolveAudioUrl(`point_${cleanCpId}_${voiceKey}.mp3`);
-        }
+        staticAudioPath = resolveAudioUrl(`point_${cleanCpId}.mp3`);
       } else {
-        // General announcement buttons: welcome, ticket, checkpoint, test, berangkat, restarea, tol, proximity
+        // General announcement buttons
         if (category === 'welcome') {
-          // Welcome audio is pre-rendered for all 4 personas with Mas Rifai & Mas Jully
-          staticAudioPath = resolveAudioUrl(`welcome_${voiceKey}.mp3`);
-        } else if (selectedVoice === 'Fenrir') {
+          staticAudioPath = resolveAudioUrl('welcome.mp3');
+        } else {
           const generalMap: Record<string, string> = {
             ticket: resolveAudioUrl('ticket.mp3'),
             checkpoint: resolveAudioUrl('checkpoint_generic.mp3'),
@@ -587,8 +591,8 @@ export default function App() {
         audio.onplay = () => {
           setIsAudioLoading(false);
           setIsPlaying(true);
-          const personaLabel = selectedVoice === 'Kore' ? 'Mbak Kore (Wanita)' : `Mas ${selectedVoice} (Pria)`;
-          setVoiceEngineStatus(`Audio Studio Asli (${personaLabel} - 24kHz)`);
+          const personaName = selectedVoice === 'Kore' ? 'Mas Sultan' : `Mas ${selectedVoice}`;
+          setVoiceEngineStatus(`Audio Studio Asli (${personaName} - Pria Dewasa Berwibawa)`);
         };
 
         audio.onended = () => {
@@ -636,7 +640,8 @@ export default function App() {
           const parsed = JSON.parse(stored);
           audioBase64 = parsed.audioBase64 || stored;
           audioMimeType = parsed.mimeType || (audioBase64?.startsWith('UklGR') ? 'audio/wav' : 'audio/mp3');
-          setVoiceEngineStatus(`Studio AI Voice (${selectedVoice} - Tersimpan di Cache)`);
+          const personaName = selectedVoice === 'Kore' ? 'Mas Sultan' : `Mas ${selectedVoice}`;
+          setVoiceEngineStatus(`Studio AI Voice (${personaName} - Pria Dewasa Berwibawa)`);
         }
       } catch {}
     }
@@ -659,7 +664,8 @@ export default function App() {
             audioBase64 = data.audioBase64;
             audioMimeType = data.mimeType || (data.audioBase64.startsWith('UklGR') ? 'audio/wav' : 'audio/mp3');
             audioCacheRef.current.set(cacheKey, data.audioBase64);
-            setVoiceEngineStatus(`Studio AI Voice (${selectedVoice} - Gemini TTS 24kHz)`);
+            const personaName = selectedVoice === 'Kore' ? 'Mas Sultan' : `Mas ${selectedVoice}`;
+            setVoiceEngineStatus(`Studio AI Voice (${personaName} - Pria Dewasa Berwibawa 24kHz)`);
             try {
               localStorage.setItem(`stj_v2_${cacheKey}`, JSON.stringify({
                 audioBase64: data.audioBase64,
@@ -673,16 +679,16 @@ export default function App() {
       }
     }
 
-    // Tier 3: Client-Side Direct Gemini API (Runs directly in browser for GitHub Pages static deployments)
+    // Tier 3: Client-Side Direct ElevenLabs API
     if (!audioBase64 && clientApiKey) {
       try {
-        setVoiceEngineStatus(`Memproses Suara ${selectedVoice} via Gemini Client...`);
-        const base64 = await synthesizeWithGeminiClientDirect(text, selectedVoice, clientApiKey);
+        setVoiceEngineStatus(`Memproses Suara Mas Fenrir (ElevenLabs)...`);
+        const base64 = await synthesizeWithElevenLabs(text, clientApiKey);
         if (base64) {
           audioBase64 = base64;
-          audioMimeType = base64.startsWith('UklGR') ? 'audio/wav' : 'audio/mp3';
+          audioMimeType = 'audio/mp3';
           audioCacheRef.current.set(cacheKey, base64);
-          setVoiceEngineStatus(`Studio AI Voice (${selectedVoice} - Direct Gemini Client)`);
+          setVoiceEngineStatus(`Studio AI Voice (Mas Fenrir - ElevenLabs)`);
           try {
             localStorage.setItem(`stj_v2_${cacheKey}`, JSON.stringify({
               audioBase64: base64,
@@ -691,7 +697,7 @@ export default function App() {
           } catch {}
         }
       } catch (clientErr: any) {
-        console.warn('Direct client-side Gemini TTS failed:', clientErr);
+        console.warn('Direct client-side ElevenLabs TTS failed:', clientErr);
       }
     }
 
@@ -728,50 +734,13 @@ export default function App() {
       }
     }
 
-    // Tier 4: Persona-accurate fallback
+    // Tier 4: Persona-accurate fallback (Authoritative Adult Male)
     fallbackVoicePlayback(text, selectedVoice);
   };
 
   const fallbackVoicePlayback = (text: string, voiceName: 'Fenrir' | 'Puck' | 'Charon' | 'Kore') => {
     setIsAudioLoading(false);
-    if (voiceName === 'Kore') {
-      // Female voice: Google TTS neural stream
-      playGoogleTtsAudioStream(text);
-    } else {
-      // Male voice (Fenrir, Puck, Charon): NEVER play female Google TTS! Use calibrated browser male voice
-      speakCalibratedBrowserVoice(text, voiceName);
-    }
-  };
-
-  const playGoogleTtsAudioStream = (text: string) => {
-    try {
-      setIsAudioLoading(false);
-      setVoiceEngineStatus('Suara Alami Indonesia (Mbak Kore - Neural Audio Stream)');
-      const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=id&total=1&idx=0&client=tw-ob`;
-      const audio = new Audio(ttsUrl);
-      audio.volume = voiceVolume;
-      currentAudioRef.current = audio;
-
-      audio.onplay = () => {
-        setIsPlaying(true);
-      };
-
-      audio.onended = () => {
-        setIsPlaying(false);
-        setActiveAudioCategory(null);
-        currentAudioRef.current = null;
-      };
-
-      audio.onerror = () => {
-        speakCalibratedBrowserVoice(text, 'Kore');
-      };
-
-      audio.play().catch(() => {
-        speakCalibratedBrowserVoice(text, 'Kore');
-      });
-    } catch {
-      speakCalibratedBrowserVoice(text, 'Kore');
-    }
+    speakCalibratedBrowserVoice(text, voiceName);
   };
 
   const speakCalibratedBrowserVoice = (text: string, voiceName?: 'Fenrir' | 'Puck' | 'Charon' | 'Kore') => {
@@ -781,25 +750,25 @@ export default function App() {
       const utterance = new SpeechSynthesisUtterance(formattedText);
       utterance.lang = 'id-ID';
       utterance.volume = voiceVolume;
-      utterance.rate = 0.90;
+      utterance.rate = 0.92; // Natural human cadence
 
       const activeVoice = voiceName || selectedVoice;
-      const isMale = activeVoice !== 'Kore';
 
       if (activeVoice === 'Charon') {
-        utterance.pitch = 0.76; // Deep bass mature male
+        utterance.pitch = 0.88; // Natural deep adult male
       } else if (activeVoice === 'Fenrir') {
-        utterance.pitch = 0.86; // Authoritative male
+        utterance.pitch = 0.95; // Natural male conductor
       } else if (activeVoice === 'Puck') {
-        utterance.pitch = 0.94; // Friendly male
+        utterance.pitch = 0.98; // Natural clear male
       } else {
-        utterance.pitch = 1.05; // Kore female
+        utterance.pitch = 0.92; // Natural male supervisor
       }
 
-      setVoiceEngineStatus(`Suara Browser Terkalibrasi (${activeVoice} - ${isMale ? 'Pria' : 'Wanita'})`);
+      const personaLabel = activeVoice === 'Kore' ? 'Mas Sultan' : `Mas ${activeVoice}`;
+      setVoiceEngineStatus(`Suara Manusia Asli (${personaLabel} - Pria Dewasa Natural)`);
 
       const voices = browserVoices.length > 0 ? browserVoices : window.speechSynthesis.getVoices();
-      const naturalVoice = getBestIndonesianVoice(voices, selectedBrowserVoiceUri, isMale);
+      const naturalVoice = getBestIndonesianVoice(voices, selectedBrowserVoiceUri, true);
       if (naturalVoice) {
         utterance.voice = naturalVoice;
       }
@@ -964,7 +933,7 @@ export default function App() {
   // Soundboard scripts - 100% Suara Manusia (Bebas Robot & Tanpa Sebutan Angka Jarak Tempuh/Kecepatan)
   const handlePlayWelcome = () => {
     const routeName = routeDirection === 'surabaya-magetan' ? 'Surabaya menuju Magetan' : 'Magetan menuju Surabaya';
-    const script = `Perhatian... Selamat datang Bapak, Ibu, dan seluruh penumpang setia Sudiro Tungga Jaya armada Viola kelas Ekonomi rute ${routeName}. Perjalanan kita kali ini dipandu oleh pengemudi kita Mas Rifai, dan didampingi oleh saya sendiri kondektur Jully. Selamat menikmati perjalanan bersama STJ Viola. Silakan duduk dengan nyaman dan tetap menjaga barang bawaan Anda. Terima kasih dan selamat menikmati perjalanan.`;
+    const script = `Perhatian... Selamat datang Bapak, Ibu, dan seluruh penumpang setia Sudiro Tungga Jaya armada Viola kelas Ekonomi rute ${routeName}. Perjalanan kita kali ini dipandu oleh pengemudi kita Mas Rifai, dan didampingi oleh kondektur Jully. Selamat menikmati perjalanan bersama STJ Viola. Silakan duduk dengan nyaman dan tetap menjaga barang bawaan Anda. Terima kasih dan selamat menikmati perjalanan.`;
     speakAnnouncement(script, 'welcome');
   };
 
@@ -1454,126 +1423,9 @@ export default function App() {
                 <span>Tes Contoh Suara</span>
               </button>
 
-              <button
-                onClick={() => setShowVoiceSettingsModal(true)}
-                className="flex-1 sm:flex-initial px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl border border-slate-700 flex items-center justify-center gap-1.5"
-                title="Pengaturan Mode Deploy GitHub"
-              >
-                <Settings className="w-3.5 h-3.5 text-red-400" />
-                <span>Mode GitHub</span>
-              </button>
             </div>
           </div>
 
-          {/* Character Voice Selector Grid */}
-          <div className="space-y-2">
-            <label className="text-xs font-mono text-slate-400 uppercase tracking-wider block">
-              PILIHAN KARAKTER PENYIAR & KONDEKTUR:
-            </label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
-              
-              {/* Voice 1: Fenrir */}
-              <div
-                onClick={() => setSelectedVoice('Fenrir')}
-                className={`p-3 sm:p-3.5 rounded-xl border cursor-pointer transition-all flex flex-col justify-between gap-2 ${
-                  selectedVoice === 'Fenrir'
-                    ? 'bg-red-950/50 border-red-500 shadow-md ring-1 ring-red-500'
-                    : 'bg-slate-950/80 border-slate-800 hover:border-slate-700'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-sm text-white flex items-center gap-1.5">
-                    🎙️ Mas Fenrir
-                  </span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-600/40 text-red-200 border border-red-500/30 font-mono font-semibold">
-                    Utama (STJ)
-                  </span>
-                </div>
-                <p className="text-xs text-slate-300">
-                  Suara pria berwibawa, menawan, dan hangat khas penyiar resmi PO Sudiro Tungga Jaya.
-                </p>
-                <div className="text-[11px] font-mono text-red-400 flex items-center gap-1">
-                  {selectedVoice === 'Fenrir' ? '✓ Sedang Dipakai' : 'Pilih Suara Ini'}
-                </div>
-              </div>
-
-              {/* Voice 2: Puck */}
-              <div
-                onClick={() => setSelectedVoice('Puck')}
-                className={`p-3 sm:p-3.5 rounded-xl border cursor-pointer transition-all flex flex-col justify-between gap-2 ${
-                  selectedVoice === 'Puck'
-                    ? 'bg-red-950/50 border-red-500 shadow-md ring-1 ring-red-500'
-                    : 'bg-slate-950/80 border-slate-800 hover:border-slate-700'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-sm text-white flex items-center gap-1.5">
-                    🎙️ Mas Puck
-                  </span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 font-mono">
-                    Ramah
-                  </span>
-                </div>
-                <p className="text-xs text-slate-300">
-                  Suara pria ramah, bersahabat, santai, dan akrab dengan seluruh penumpang.
-                </p>
-                <div className="text-[11px] font-mono text-red-400 flex items-center gap-1">
-                  {selectedVoice === 'Puck' ? '✓ Sedang Dipakai' : 'Pilih Suara Ini'}
-                </div>
-              </div>
-
-              {/* Voice 3: Charon */}
-              <div
-                onClick={() => setSelectedVoice('Charon')}
-                className={`p-3 sm:p-3.5 rounded-xl border cursor-pointer transition-all flex flex-col justify-between gap-2 ${
-                  selectedVoice === 'Charon'
-                    ? 'bg-red-950/50 border-red-500 shadow-md ring-1 ring-red-500'
-                    : 'bg-slate-950/80 border-slate-800 hover:border-slate-700'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-sm text-white flex items-center gap-1.5">
-                    🎙️ Mas Charon
-                  </span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 font-mono">
-                    Dewasa
-                  </span>
-                </div>
-                <p className="text-xs text-slate-300">
-                  Suara pria dewasa dengan nada bass mantap, tenang, dan elegan.
-                </p>
-                <div className="text-[11px] font-mono text-red-400 flex items-center gap-1">
-                  {selectedVoice === 'Charon' ? '✓ Sedang Dipakai' : 'Pilih Suara Ini'}
-                </div>
-              </div>
-
-              {/* Voice 4: Kore */}
-              <div
-                onClick={() => setSelectedVoice('Kore')}
-                className={`p-3 sm:p-3.5 rounded-xl border cursor-pointer transition-all flex flex-col justify-between gap-2 ${
-                  selectedVoice === 'Kore'
-                    ? 'bg-red-950/50 border-red-500 shadow-md ring-1 ring-red-500'
-                    : 'bg-slate-950/80 border-slate-800 hover:border-slate-700'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-sm text-white flex items-center gap-1.5">
-                    🎙️ Mbak Kore
-                  </span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 font-mono">
-                    Wanita
-                  </span>
-                </div>
-                <p className="text-xs text-slate-300">
-                  Suara wanita penyiar terminal yang merdu, lembut, anggun, dan sopan.
-                </p>
-                <div className="text-[11px] font-mono text-red-400 flex items-center gap-1">
-                  {selectedVoice === 'Kore' ? '✓ Sedang Dipakai' : 'Pilih Suara Ini'}
-                </div>
-              </div>
-
-            </div>
-          </div>
 
           {/* Bel Terminal & Volume Controls */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 pt-2">
@@ -1783,20 +1635,17 @@ export default function App() {
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
-                  <span className={`text-[11px] sm:text-xs font-semibold px-2.5 py-1 rounded-lg border ${
-                    selectedVoice === 'Kore'
-                      ? 'text-pink-400 bg-pink-950/60 border-pink-500/30'
-                      : 'text-amber-400 bg-amber-950/60 border-amber-500/30'
-                  }`}>
-                    🎙️ Suara: {selectedVoice === 'Kore' ? 'Mbak Kore (Wanita)' : `Mas ${selectedVoice} (Pria)`}
-                  </span>
+                  {/* Removed voice badge */}
                   <span className="text-xs font-mono text-emerald-400 bg-emerald-950/60 px-2.5 py-1 rounded-lg border border-emerald-500/30 hidden sm:inline-block">
                     {checkpoints.length} Point Siap
                   </span>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-2.5">
+              <div 
+                key={routeDirection}
+                className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-2.5 transition-opacity duration-500 ease-in-out opacity-100 animate-in fade-in"
+              >
                 {checkpoints.map((cp, idx) => {
                   const isCurrent = currentCheckpointIndex === idx;
                   const categoryKey = `point-${cp.id}`;
