@@ -14,8 +14,8 @@ import {
   formatIndonesianTextForSpeech, 
   getBestIndonesianVoice, 
   synthesizeWithElevenLabs, 
-  getStoredGeminiApiKey, 
-  saveStoredGeminiApiKey, 
+  getStoredElevenLabsApiKey, 
+  saveStoredElevenLabsApiKey, 
   getStoredVoiceUri, 
   saveStoredVoiceUri,
   GEMINI_VOICES, 
@@ -127,8 +127,8 @@ export default function App() {
   const [isAudioLoading, setIsAudioLoading] = useState<boolean>(false);
   const [activeAudioCategory, setActiveAudioCategory] = useState<string | null>(null);
   const [voiceEngineStatus, setVoiceEngineStatus] = useState<string>('Studio Suara Manusia (Bebas Robot)');
-  const [clientApiKey, setClientApiKey] = useState<string>(() => getStoredGeminiApiKey());
-  const [apiKeyInput, setApiKeyInput] = useState<string>(() => getStoredGeminiApiKey());
+  const [clientApiKey, setClientApiKey] = useState<string>(() => getStoredElevenLabsApiKey());
+  const [apiKeyInput, setApiKeyInput] = useState<string>(() => getStoredElevenLabsApiKey());
   const [showVoiceSettingsModal, setShowVoiceSettingsModal] = useState<boolean>(false);
   const [browserVoices, setBrowserVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedBrowserVoiceUri, setSelectedBrowserVoiceUri] = useState<string>(() => getStoredVoiceUri());
@@ -584,6 +584,11 @@ export default function App() {
 
     if (staticAudioPath) {
       try {
+        // Stop any ongoing browser speech before playing static audio
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+        }
+
         const audio = new Audio(staticAudioPath);
         audio.volume = voiceVolume;
         currentAudioRef.current = audio;
@@ -591,8 +596,7 @@ export default function App() {
         audio.onplay = () => {
           setIsAudioLoading(false);
           setIsPlaying(true);
-          const personaName = selectedVoice === 'Kore' ? 'Mas Sultan' : `Mas ${selectedVoice}`;
-          setVoiceEngineStatus(`Audio Studio Asli (${personaName} - Pria Dewasa Berwibawa)`);
+          setVoiceEngineStatus(`Audio Studio Asli (Mas Jully - Pria Dewasa Berwibawa)`);
         };
 
         audio.onended = () => {
@@ -601,6 +605,7 @@ export default function App() {
           setActiveAudioCategory(null);
           currentAudioRef.current = null;
         };
+
 
         audio.onerror = () => {
           console.warn('Bundled audio file load failed, executing dynamic speech...', staticAudioPath);
@@ -794,14 +799,14 @@ export default function App() {
   };
 
   const handleSaveApiKey = () => {
-    saveStoredGeminiApiKey(apiKeyInput);
+    saveStoredElevenLabsApiKey(apiKeyInput);
     setClientApiKey(apiKeyInput.trim());
-    setApiKeySaveMsg('Kunci API Gemini tersimpan! Suara manusia 24kHz aktif di GitHub.');
+    setApiKeySaveMsg('Kunci API ElevenLabs tersimpan!');
     setTimeout(() => setApiKeySaveMsg(null), 4000);
   };
 
   const handleClearApiKey = () => {
-    saveStoredGeminiApiKey('');
+    saveStoredElevenLabsApiKey('');
     setClientApiKey('');
     setApiKeyInput('');
     setApiKeySaveMsg('Kunci API telah dihapus dari browser.');

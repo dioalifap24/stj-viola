@@ -149,20 +149,20 @@ export async function synthesizeWithElevenLabs(
 
 
 /**
- * Storage helpers for user Gemini API key
+ * Storage helpers for user ElevenLabs API key
  */
-const STORAGE_KEY_API_KEY = 'stj_gemini_api_key';
+const STORAGE_KEY_API_KEY = 'stj_elevenlabs_api_key';
 const STORAGE_KEY_VOICE_URI = 'stj_browser_voice_uri';
 
-export function getStoredGeminiApiKey(): string {
+export function getStoredElevenLabsApiKey(): string {
   try {
-    return localStorage.getItem(STORAGE_KEY_API_KEY) || (import.meta.env.VITE_GEMINI_API_KEY as string) || '';
+    return localStorage.getItem(STORAGE_KEY_API_KEY) || (import.meta.env.VITE_ELEVENLABS_API_KEY as string) || '';
   } catch {
     return '';
   }
 }
 
-export function saveStoredGeminiApiKey(key: string): void {
+export function saveStoredElevenLabsApiKey(key: string): void {
   try {
     if (!key || !key.trim()) {
       localStorage.removeItem(STORAGE_KEY_API_KEY);
